@@ -1,23 +1,12 @@
 <?php
 declare(strict_types=1);
 error_reporting(-1);
+
+// Функция конвертирует данные в более удобный формат.
 function dump(mixed $data): void
 {
     echo '<pre>'; \print_r($data); echo '</pre>';
 }
-//
-//function getUsers($connection, string $order, ?int $id = null): array
-//{
-//	if ($id) {
-//		$query = 'select * from users where id=? limit 1';
-//	} else {
-//		$query = "select * from users order by {$order} desc";
-//	}
-//	$sth = $connection->prepare($query);
-//	$sth->execute(\is_null($id) ? [] : [$id]);
-//	$result = $sth->fetchAll();
-//	return $result;
-//}
 
 // Функция возвращает либо объект класса из глобальной области видимости PDO либо значение null
 function connectionDB(): ?\PDO
@@ -47,9 +36,6 @@ function connectionDB(): ?\PDO
     return $dbh;
 }
 
-//добавить комменты ко всем строчкам не бездумные
-//сделать обработку ошибок
-
 // Функция для получения пользователей.
 // Принимает переменную содержащую объект глобального класса PDO.
 // Принимает строку с именем таблицы, по которой будет выполняться сортировка.
@@ -57,7 +43,7 @@ function connectionDB(): ?\PDO
 function getUsers(\PDO $connection, string $order): array
 {
     // Запрос сортирующий пользователей по таблицам по убыванию.
-    $query = "select * from users order by {$order} desc";
+    $query = "SELECT * FROM users ORDER BY {$order} DESC";
 
     // Повышем производительность и безопасность методом кэширования
     // метаданных и экранирования строки.
@@ -69,8 +55,13 @@ function getUsers(\PDO $connection, string $order): array
     // Создаем массив содержащий все строки из набора результатов.
     $result = $sth->fetchAll();
 
+    if (!$result) {
+        // Создаем экземпляр глобального класса Error и отправляем туда информацию
+        // об ошибке.
+        throw new \Error('Users not found');
+    }
     // Возвращаем переменную с массивом данных всех строк.
-    return $result;
+    return (array) $result;
 }
 
 // Функция для получения одного пользователя.
@@ -81,7 +72,7 @@ function getUser(\PDO $connection, int $id): array
 {
     // Запрос сортирующий данных из таблицы users по id с плейсхолдером,
     // оператор limit допускает возвращение только одного значения.
-    $query = 'select * from users where id=? limit 1';
+    $query = 'SELECT * FROM users WHERE id=? LIMIT 1';
 
     // Повышем производительность и безопасность методом кэширования
     // метаданных и экранирование строки.
@@ -98,21 +89,12 @@ function getUser(\PDO $connection, int $id): array
         // об ошибке.
         throw new \Error('User not found.');
     }
-    //var_dump($result);
-    //return $result;
-    //return $result !== false ? $result : [];
 
     // Возвращаем переменную с массивом данных пользователя.
-    return $result;
+    return (array) $result;
 }
-//
-//name
-//email
-//phone
-//password
-//is_active
 
-// Функция добавляющая данные о пользователе в MYSQL.
+// Функция сохраняющая данные о пользователе в MYSQL.
 // Принимает объект глобального класса PDO.
 // Принимает данные пользователя в виде массива.
 // Возвращает айди добавленного пользователя.
@@ -132,19 +114,31 @@ function saveUser(\PDO $connection, array $data): int
 
     // Создаем переменную содержащую последний созданный айди в БД
     $result = $connection->lastInsertId();
+    if (!$result) {
+        // Создаем объект глобального класса содержащий информацию об ошибке.
+        throw new \Error('Error save user');
+    }
 
     // Возвращаем айди пользователя.
     return (int) $result;
 }
 
+// Функция проверяет есть ли совпадения введенных данных с информацией из БД
+// Принимает объект глобального класса PDO.
+// Принимает 2 параметра - email и phoneNumber, которые и будут проверяться в дальнейшем.
+// Возвращает булево значения, true - совпадения есть, false - совпадений нет.
 function checkUser(\PDO $connection, string $email, string $phoneNumber): bool
 {
     $query = "SELECT * FROM users WHERE email=? OR phone_number=?";
 
+    // Подготовка запроса.
     $sth = $connection->prepare($query);
+    // Исполняем запрос передавая туда 2 параметра, заменяющие плейсхолдеры.
     $sth->execute([$email, $phoneNumber]);
+    // Формируем переменную содержащую строку с конечным результатом, если есть совпадения, иначе false.
     $result = $sth->fetch();
 
+    // Возвращаем булево значение содержащая информацию о существовании пользователя.
     return (bool) $result;
 }
 
@@ -170,9 +164,14 @@ function updateUser(\PDO $connection, int $userId, string $newName, string $newE
 
     // Выполняем запрос.
     $sth->execute();
+    // Прерываем выполнение функции.
     die;
 }
 
+// Функция удаления пользователя из БД.
+// Принимает на вход объект глобального класса PDO.
+// Принимает айди нужного пользователя.
+// Ничего не возвращает.
 function deleteUser(\PDO $connection, int $userId): never
 {
     // Запрос удаляющий пользователя из БД по айди.
@@ -185,46 +184,72 @@ function deleteUser(\PDO $connection, int $userId): never
     $sth->bindParam(':id', $userId, PDO::PARAM_INT);
 
     // Выполняем запрос
+    $result = $sth->execute();
+
     $sth->execute();
 
+    // Прерываем выполнение функции.
     die;
 }
 
-// Создаем переменную содержащую результат функции с информацией для подключения к БД.
 $connectionDB = connectionDB();
 
-//$deleteUser = deleteUser($connectionDB, 4);
-
-
-//if (updateUser($connectionDB,1, 'jutlumbek', 'jutlumbek@gmail.com', '79221312312')) {
-//    echo 'dqwdwq';
-//} else {
-//    echo '123';
-//}
-//$checkUser = checkUser($connectionDB, $email, $phoneNumber);
 
 // Создаем переменную содержащую информацию о всех пользователях.
 // Передаем переменную с информацией о БД и таблицу в качестве параметров.
 $users = getUsers($connectionDB, 'email');
-dump($users);
 
-// Выводим информацию о всех пользователях.
-//dump($users);
 
 // Модель исключений "вылавливающая возможные ошибки"
 try {
+    // Определяем метод взаимодействия с данными пользователя.
+    $action = 'save';
+
     // Определяем айди пользователя.
-    $id = 8;
+    $id = 22;
 
-    // Передаем в функцию параметры переменную с информацией о БД и айди пользователя.
-    $user = getUser($connectionDB, $id);
 
-    // Выводим информацию о пользователе.
-//    dump($user);
+    if ($action === 'delete') {
+        // Удаляем пользователя.
+        $deleteUser = deleteUser($connectionDB, $id);
+    } elseif ($action === 'update') {
+        // Обновляем пользователя.
+        $name = 'test2';
+        $email = 'test2@gmail.com';
+        $phone = '7891341231';
+        $updateUser = updateUser($connectionDB, $id, $name, $email, $phone);
+    } elseif ($action === 'save') {
+        // Добавляем пользователя.
+        $data = [
+            'name' => 'test',
+            'email' => 'test@gmail.com',
+            'phone_number' => '790735472',
+            'password' => password_hash('1234124', PASSWORD_DEFAULT),
+            'is_active' => 1
+        ];
+        $saveUser = saveUser($connectionDB, $data);
+    } elseif ($action === 'check') {
+        // Проверяем наличие вводимых данных в БД.
+        $email = 'test2@gmail.com';
+        $phone = '79';
+        $checkUser = checkUser($connectionDB, $email, $phone);
+        var_dump($checkUser);
+    } elseif ($action === 'getUsers') {
+        // Получаем всех пользователей в виде ассоциативного массива.
 
+        // Название таблицы
+        $table = 'name';
+        $getUsers = getUsers($connectionDB, $table);
+        dump($getUsers);
+    } elseif ($action === 'getUser') {
+        // Получаем данные пользователя через его айди.
+        $getUser = getUser($connectionDB, $id);
+        dump($getUser);
+    }
 // Блок определяющий как реагировать на выброшенное исключение.
-} catch (\Error $e) {
-    // Записываем в файл информацию об ошибке определенной в классе Error в функции getUser.
+}
+catch (\Error $e) {
+    // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
     file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
     // Заваршаем выполнения скрипта и отправляем ошибку
     die ($e->getMessage());
@@ -232,25 +257,6 @@ try {
     // В любом другом случаи записываем в файл определенную информацию.
     file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
 }
-// Выводим информацию о нужном пользователе.
-//print_r($user);
-
-// Формируем данные с пользователем для записи в БД.
-$data = [
-    'name' => 'Ivangus',
-    'email' => 'ivn@mail.ru',
-    'phone' => '79404443301',
-    // Обрабатываем пароль через функцию password_hash.
-    'password' => password_hash('12345j', PASSWORD_DEFAULT),
-    'is_active' => 1,
-];
-
-// Создаем переменную содержащую айди последнего созданного пользователя.
-// Функция принимает информацию о БД и данные о пользователе в виде параметров.
-//$lastId = saveUser($connectionDB, $data);
-
-// Выводим айди последнего созданного пользователя.
-//print_r($lastId);
 
 // ----------------------------------
 
