@@ -1,4 +1,10 @@
 <?php
+declare(strict_types=1);
+error_reporting(-1);
+function dump(mixed $data): void
+{
+    echo '<pre>'; \print_r($data); echo '</pre>';
+}
 //
 //function getUsers($connection, string $order, ?int $id = null): array
 //{
@@ -19,7 +25,7 @@ function connectionDB(): ?\PDO
     // Создаем экземпляр глобального класса PDO
     $dbh = new \PDO(
         // Задаем строку DSN содержащая информацию для подключения к mysql
-        'mysql:host=localhost;dbname=db-tt;charset=utf8mb4',
+        'mysql:host=localhost;dbname=mvc-int-shop;charset=utf8mb4',
         // Задаем имя пользователя для строки DSN
         'root',
         // Задаем пароль для строки DSN
@@ -46,11 +52,11 @@ function connectionDB(): ?\PDO
 
 // Функция для получения пользователей.
 // Принимает переменную содержащую объект глобального класса PDO.
-// Принимает строку с заказом, по которой будет выполняться сортировка.
-// Возвращает массив данных о всех пользователях.
+// Принимает строку с именем таблицы, по которой будет выполняться сортировка.
+// Возвращает массив данных с информацией о всех пользователях.
 function getUsers(\PDO $connection, string $order): array
 {
-    // Запрос сортирующий заказы по убыванию.
+    // Запрос сортирующий пользователей по таблицам по убыванию.
     $query = "select * from users order by {$order} desc";
 
     // Повышем производительность и безопасность методом кэширования
@@ -114,44 +120,91 @@ function saveUser(\PDO $connection, array $data): int
 {
     // Запрос добавляющий запись данных пользователя в таблицу users.
     // Запрос содержит плейсхолдеры для будущих значений.
-    $query = 'insert into users (name, email, phone, password, is_active) VALUES (?,?,?,?,?)';
+    $query = 'insert into users (name, email, phone_number, password, is_active) VALUES (?,?,?,?,?)';
 
     // Повышаем производительность и безопасность методом кэширования
     // метаданных и экранирования строки.
     $sth = $connection->prepare($query);
 
-    // Выполняем подготовленный запрос, передвая массив содержащий данные пользователя
-    // в качестве параметра функции array_values для переиндексирования массива.
+    // Выполняем подготовленный запрос, передавая массив содержащий данные пользователя
+    // в качестве параметра в функции array_values для переиндексирования массива.
     $sth->execute(\array_values($data));
 
     // Создаем переменную содержащую последний созданный айди в БД
     $result = $connection->lastInsertId();
 
     // Возвращаем айди пользователя.
-    return (int)$result;
+    return (int) $result;
 }
-//функция проверки пользователя по email и телефону
-//если есть сказать об этом
+
+function checkUser(\PDO $connection, string $email, string $phoneNumber): bool
+{
+    $query = "SELECT * FROM users WHERE email=? OR phone_number=?";
+
+    $sth = $connection->prepare($query);
+    $sth->execute([$email, $phoneNumber]);
+    $result = $sth->fetch();
+
+    return (bool) $result;
+}
+
+
+// Функция обновляющая информацию о пользователе
+// Принимает объект глобального класса PDO
+// Принимает айди нужного пользователя.
+// Принимает переменные с новыми данными
+// Ничего не возвращает.
+function updateUser(\PDO $connection, int $userId, string $newName, string $newEmail, string $newPhone): never
+{
+    // Запрос обновляющий информацию о пользователе по айди.
+    $sql = "UPDATE users SET name = :name, email = :email, phone_number = :phone_number WHERE id = :id";
+
+    // Подготовка запроса.
+    $stmt = $connection->prepare($sql);
+
+    // Связываем ИМЕНОВАННЫЕ параметры запроса с нужной переменной.
+    $stmt->bindParam(':name', $newName, PDO::PARAM_STR);
+    $stmt->bindParam(':email', $newEmail, PDO::PARAM_STR);
+    $stmt->bindParam(':phone_number', $newPhone, PDO::PARAM_STR);
+    $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+
+    // Выполняем запрос.
+    $stmt->execute();
+    die;
+}
+
 //обновления данных пользователя
 //удаление пользователя
 
 // Создаем переменную содержащую результат функции с информацией для подключения к БД.
 $connectionDB = connectionDB();
 
-// Создаем переменную содержащую информацию о всех пользователях.
-// Передаем переменную с информацией о БД и айди заказа в качестве параметров.
-$users = getUsers($connectionDB, 'id');
 
-// Выводим всех пользователей.
-print_r($users);
+//if (updateUser($connectionDB,1, 'jutlumbek', 'jutlumbek@gmail.com', '79221312312')) {
+//    echo 'dqwdwq';
+//} else {
+//    echo '123';
+//}
+//$checkUser = checkUser($connectionDB, $email, $phoneNumber);
+
+// Создаем переменную содержащую информацию о всех пользователях.
+// Передаем переменную с информацией о БД и таблицу в качестве параметров.
+$users = getUsers($connectionDB, 'email');
+dump($users);
+
+// Выводим информацию о всех пользователях.
+//dump($users);
 
 // Модель исключений "вылавливающая возможные ошибки"
 try {
     // Определяем айди пользователя.
-    $id = 1;
+    $id = 8;
 
     // Передаем в функцию параметры переменную с информацией о БД и айди пользователя.
     $user = getUser($connectionDB, $id);
+
+    // Выводим информацию о пользователе.
+//    dump($user);
 
 // Блок определяющий как реагировать на выброшенное исключение.
 } catch (\Error $e) {
@@ -164,7 +217,7 @@ try {
     file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
 }
 // Выводим информацию о нужном пользователе.
-print_r($user);
+//print_r($user);
 
 // Формируем данные с пользователем для записи в БД.
 $data = [
@@ -178,10 +231,10 @@ $data = [
 
 // Создаем переменную содержащую айди последнего созданного пользователя.
 // Функция принимает информацию о БД и данные о пользователе в виде параметров.
-$lastId = saveUser($connectionDB, $data);
+//$lastId = saveUser($connectionDB, $data);
 
 // Выводим айди последнего созданного пользователя.
-print_r($lastId);
+//print_r($lastId);
 
 // ----------------------------------
 
