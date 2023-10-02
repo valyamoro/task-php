@@ -160,24 +160,40 @@ function updateUser(\PDO $connection, int $userId, string $newName, string $newE
     $sql = "UPDATE users SET name = :name, email = :email, phone_number = :phone_number WHERE id = :id";
 
     // Подготовка запроса.
-    $stmt = $connection->prepare($sql);
+    $sth = $connection->prepare($sql);
 
     // Связываем ИМЕНОВАННЫЕ параметры запроса с нужной переменной.
-    $stmt->bindParam(':name', $newName, PDO::PARAM_STR);
-    $stmt->bindParam(':email', $newEmail, PDO::PARAM_STR);
-    $stmt->bindParam(':phone_number', $newPhone, PDO::PARAM_STR);
-    $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+    $sth->bindParam(':name', $newName, PDO::PARAM_STR);
+    $sth->bindParam(':email', $newEmail, PDO::PARAM_STR);
+    $sth->bindParam(':phone_number', $newPhone, PDO::PARAM_STR);
+    $sth->bindParam(':id', $userId, PDO::PARAM_INT);
 
     // Выполняем запрос.
-    $stmt->execute();
+    $sth->execute();
     die;
 }
 
-//обновления данных пользователя
-//удаление пользователя
+function deleteUser(\PDO $connection, int $userId): never
+{
+    // Запрос удаляющий пользователя из БД по айди.
+    $sql = 'DELETE FROM users WHERE id= :id';
+
+    // Подготовка запроса.
+    $sth = $connection->prepare($sql);
+
+    // Связываем именной параметр с переменной айди пользователя.
+    $sth->bindParam(':id', $userId, PDO::PARAM_INT);
+
+    // Выполняем запрос
+    $sth->execute();
+
+    die;
+}
 
 // Создаем переменную содержащую результат функции с информацией для подключения к БД.
 $connectionDB = connectionDB();
+
+//$deleteUser = deleteUser($connectionDB, 4);
 
 
 //if (updateUser($connectionDB,1, 'jutlumbek', 'jutlumbek@gmail.com', '79221312312')) {
