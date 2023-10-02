@@ -1,16 +1,14 @@
 <?php
 
-function connectionDB(): ?\PDO
-{
-    $dbh = new PDO(
-        'mysql:host=localhost;dbname=db-tt;charset=utf8mb4',
-        'root',
-        '', [
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-            \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4'"
-        ]
-    );
+$calories = 150;
+$colour = 'red';
 
-    return $dbh;
-}
+$sth = $dbh->prepare('SELECT name, colour, calories FROM fruit
+WHERE calories < :calories AND colour = :colour');
+
+$sth->bindParam(':calories', $calories, PDO::PARAM_INT);
+$sth->bindValue(':colour', $colour, PDO::PARAM_STR, 12);
+$sth->execute();
+
+$sth->debugDumpParams();
+
