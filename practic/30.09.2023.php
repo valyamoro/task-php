@@ -8,42 +8,54 @@ function dump(mixed $data): void
     echo '<pre>'; \print_r($data); echo '</pre>';
 }
 
-// Возвращает PDO||Exception
+// Возвращает PDO|null|Exception
 function connectionDB(): ?\PDO
 {
     static $dbh;
 
-    if (!\is_null($dbh)) {
-        return $dbh;
-    }
+    /* Зачем тут проверка на null, если при возвращении null
+    оно будет автоматически конвертироваться в Exception
+    и возвращать именно описание ошибки?
+    */
+//    if (!\is_null($dbh)) {
+//        return $dbh;
+//    }
+    // Может быть стоит проверять через isset чтобы избежать
+    // лишних подключений к бд?
+
     // Создаем экземпляр глобального класса PDO
-    try {
-        $dbh = new \PDO(
-        // Задаем строку DSN содержащая информацию для подключения к mysql
-            'mysql:host=localhost;dbname=mvcz-int-shop;charset=utf8mb4',
-            // Задаем имя пользователя для строки DSN
-            'root',
-            // Задаем пароль для строки DSN
-            '',
-            // Задаем для драйвера настройки подключения.
-            [
-                // Устанавливаем режим сообщения об ошибках, выбрасывающий
-                // исключение PDOException, отправляющий код ошибки и ее описание.
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-
-                // Указываем режим извлечения данных, в виде ассоциативных массивов.
-                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-
-                // Устанавливаем расширенную версию utf-8 более подходящую для работы с БД
-                \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4'",
-            ]
-        );
-    // Обработка возможных исключений.
-    } catch (\PDOException $e) {
-        // Если не получается подключится, то отправляет ошибку в класс PDOException
-        // и в файл errors.log.
+    if (isset($dbh)) {
         file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
-        die ('Connection error:' . $e->getMessage());
+        die ('БД уже подключена:' . $e->getMessage());
+    } else {
+        try {
+            $dbh = new \PDO(
+            // Задаем строку DSN содержащая информацию для подключения к mysql
+                'mysql:host=localhost;dbname=mvc-int-shop;charset=utf8mb4',
+                // Задаем имя пользователя для строки DSN
+                'root',
+                // Задаем пароль для строки DSN
+                '',
+                // Задаем для драйвера настройки подключения.
+                [
+                    // Устанавливаем режим сообщения об ошибках, выбрасывающий
+                    // исключение PDOException, отправляющий код ошибки и ее описание.
+                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+
+                    // Указываем режим извлечения данных, в виде ассоциативных массивов.
+                    \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+
+                    // Устанавливаем расширенную версию utf-8 более подходящую для работы с БД
+                    \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4'",
+                ]
+            );
+            // Обработка возможных исключений.
+        } catch (\PDOException $e) {
+            // Если не получается подключится, то отправляет ошибку в класс PDOException
+            // и в файл errors.log.
+            file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
+            die ('Connection error:' . $e->getMessage());
+        }
     }
     // Возвращаем заполненный настройками объект глобального класса PDO
     return $dbh;
@@ -155,6 +167,11 @@ function checkUserEmail(\PDO $connection, string $email): bool
     // Создаем переменную содержащую всю информацию о пользователе, иначе false.
     $result = $sth->fetch();
 
+    // Использую строгое равенство, т.к null может быть приведен из других типов
+    if ($result === null) {
+        // Выбрасываем ошибку в класс Error если есть.
+        throw new \Error('Error check user email');
+    }
     // Возвращаем булево значение true, если пользователь с такой почтой существует.
     return (bool) $result;
 }
@@ -178,6 +195,12 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
 
     // Создаем переменную содержащую всю информацию о пользователе, иначе false
     $result = $sth->fetch();
+
+    // Использую строгое равенство, т.к null может быть приведен из других типов
+    if ($result === null) {
+        // Выбрасываем ошибку в класс Error если есть.
+        throw new \Error('Error check user phone');
+    }
     // Возвращаем true, если пользователь с таким номером существует.
     return (bool) $result;
 }
@@ -209,6 +232,10 @@ function updateUser(\PDO $connection, array $data, int $userId): array
     // Выполняем запрос.
     $sth->execute();
 
+    if (!$data) {
+        // Выбрасываем ошибку в класс Error если есть.
+        throw new \Error('Error update user data');
+    }
     // Возвращаем массив измененных данных
     // Т.к валидации нет, то беру $data напрямую.
     return (array) $data;
@@ -232,6 +259,10 @@ function deleteUser(\PDO $connection, int $userId): bool
     // Выполняем запрос
     $result = $sth->execute([':id' => $userId]);
 
+    if (!$result) {
+        // Выбрасываем ошибку в класс Error если есть.
+        throw new \Error('Error delete user');
+    }
     // Возвращаем true, если пользователь удалился.
     return (bool) $result;
 
@@ -242,14 +273,14 @@ $connectionDB = connectionDB();
 // Модель исключений "вылавливающая возможные ошибки"
 try {
     // Определяем метод взаимодействия с данными пользователя.
-    $action = 'getUsers';
+    $action = 'check';
 
     // Определяем айди пользователя.
-    $id = 22;
+    $id = 26;
 
     if ($action === 'delete') {
         // Удаляем пользователя.
-        $deleteUser = deleteUser($connectionDB, 24);
+        $deleteUser = deleteUser($connectionDB, $id);
     } elseif ($action === 'update') {
         // Обновляем пользователя.
         $data = [
@@ -271,10 +302,15 @@ try {
         $saveUser = saveUser($connectionDB, $data);
     } elseif ($action === 'check') {
         // Проверяем наличие вводимых данных в БД.
-        $email = 'test2@gmail.com';
-        $phone = '79';
-        $checkUser = checkUser($connectionDB, $email, $phone);
-        var_dump($checkUser);
+        $email = 'test@gmail.com';
+        $phone = '79121321323';
+        $checkUserEmail = checkUserEmail($connectionDB, $email);
+        $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $phone);
+        if (!($checkUserPhoneNumber || $checkUserEmail)) {
+            echo 'Пользователя с такими данными нет!';
+        } else {
+            echo 'Пользователь с этими данными существует';
+        }
     } elseif ($action === 'getUsers') {
         // Получаем всех пользователей в виде ассоциативного массива.
 
