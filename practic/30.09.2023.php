@@ -135,21 +135,50 @@ function saveUser(\PDO $connection, array $data): int
     return (int) $result;
 }
 
-function checkUser(\PDO $connection, string $email, string $phoneNumber): bool
+/**
+ * Проверка на наличие пользователя в БД по почте.
+ * @param PDO $connection
+ * @param string $email
+ * @return bool
+ */
+function checkUserEmail(\PDO $connection, string $email): bool
 {
-    $query = "SELECT * FROM users WHERE email=? OR phone_number=?";
+    // Собираем все почты всех пользователей.
+    $query = "SELECT * FROM users WHERE email=?";
 
     // Подготовка запроса.
     $sth = $connection->prepare($query);
-    // Исполняем запрос передавая туда 2 параметра, заменяющие плейсхолдеры.
-    $sth->execute([$email, $phoneNumber]);
-    // Формируем переменную содержащую строку с конечным результатом, если есть совпадения, иначе false.
+    // Исполняем запрос передавая туда почту пользователя.
+    $sth->execute([$email]);
+    // Создаем переменную содержащую всю информацию о пользователе, иначе false.
     $result = $sth->fetch();
 
-    // Возвращаем булево значение содержащая информацию о существовании пользователя.
+    // Возвращаем булево значение true, если пользователь с такой почтой существует.
     return (bool) $result;
 }
 
+/**
+ * Проверка на наличие пользователя в БД по номеру телефона.
+ * @param PDO $connection
+ * @param string $phoneNumber
+ * @return bool
+ */
+function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
+{
+    // Собираем все номера телефонов всех пользователей.
+    $query = "SELECT * FROM users where phone_number=?";
+
+    // Подготовка запроса.
+    $sth = $connection->prepare($query);
+
+    // Исполняем запрос передвая туда номер телефона пользователя.
+    $sth->execute([$phoneNumber]);
+
+    // Создаем переменную содержащую всю информацию о пользователе, иначе false
+    $result = $sth->fetch();
+    // Возвращаем true, если пользователь с таким номером существует.
+    return (bool) $result;
+}
 
 // Функция обновляющая информацию о пользователе
 // Принимает объект глобального класса PDO
