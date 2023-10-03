@@ -194,21 +194,23 @@ function updateUser(\PDO $connection, array $data, int $userId): array
     // Подготовка запроса.
     $sth = $connection->prepare($sql);
 
-    // Выполняем запрос, передвая в него измененные данные пользователя.
-    $sth->execute([
-        ':name' => $data['name'],
-        ':email' => $data['email'],
-        ':phone_number' => $data['phone'],
-        ':password' => $data['password'],
-        ':id' => $userId
-	]);
+    /* Решил оставить bindParam, т.к он обеспечивает защиту от SQL-инъекций
+    и явно указывает тип принимаемых значений.
+    */
+
+    $sth->bindParam(':name', $data['name'], PDO::PARAM_STR);
+    $sth->bindParam(':email', $data['email'], PDO::PARAM_STR);
+    $sth->bindParam(':phone_number', $data['phone'], PDO::PARAM_STR);
+    $sth->bindParam(':password', $data['password'], PDO::PARAM_STR);
+    $sth->bindParam(':id', $userId, PDO::PARAM_INT);
+
+    // Выполняем запрос.
+    $sth->execute();
 
     // Возвращаем массив измененных данных
     // Т.к валидации нет, то беру $data напрямую.
     return (array) $data;
 }
-
-
 
 // Функция удаления пользователя из БД.
 // Принимает на вход объект глобального класса PDO.
@@ -250,17 +252,16 @@ try {
     // Определяем айди пользователя.
     $id = 22;
 
-
     if ($action === 'delete') {
         // Удаляем пользователя.
         $deleteUser = deleteUser($connectionDB, $id);
     } elseif ($action === 'update') {
         // Обновляем пользователя.
         $data = [
-            'name' => 'test4',
+            'name' => 'test5',
             'email' => 'test3@gmail.com',
             'phone' => '7891541231',
-            'password' => password_hash('zxcv', PASSWORD_DEFAULT),
+            'password' => password_hash('fada', PASSWORD_DEFAULT),
         ];
         $updateUser = updateUser($connectionDB, $data, $id);
     } elseif ($action === 'save') {
