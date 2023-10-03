@@ -11,27 +11,37 @@ function dump(mixed $data): void
 // Функция возвращает либо объект класса из глобальной области видимости PDO либо значение null
 function connectionDB(): ?\PDO
 {
+    static $dbh;
+
+    if (\is_null($dbh)) {
+        return $dbh;
+    }
     // Создаем экземпляр глобального класса PDO
-    $dbh = new \PDO(
+    try {
+        $dbh = new \PDO(
         // Задаем строку DSN содержащая информацию для подключения к mysql
-        'mysql:host=localhost;dbname=mvc-int-shop;charset=utf8mb4',
-        // Задаем имя пользователя для строки DSN
-        'root',
-        // Задаем пароль для строки DSN
-        '',
-        // Задаем для драйвера настройки подключения.
-        [
-            // Устанавливаем режим сообщения об ошибках, выбрасывающий
-            // исключение PDOException, отправляющий код ошибки и ее описание.
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            'mysql:host=localhost;dbname=mvc-int-shop;charset=utf8mb4',
+            // Задаем имя пользователя для строки DSN
+            'root',
+            // Задаем пароль для строки DSN
+            '',
+            // Задаем для драйвера настройки подключения.
+            [
+                // Устанавливаем режим сообщения об ошибках, выбрасывающий
+                // исключение PDOException, отправляющий код ошибки и ее описание.
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 
-            // Указываем режим извлечения данных, в виде ассоциативных массивов.
-            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+                // Указываем режим извлечения данных, в виде ассоциативных массивов.
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
 
-            // Устанавливаем расширенную версию utf-8 более подходящую для работы с БД
-            \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4'",
-        ]
-    );
+                // Устанавливаем расширенную версию utf-8 более подходящую для работы с БД
+                \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4'",
+            ]
+        );
+    } catch (\PDOException $e) {
+        // Если не получается подключится, то отправляет ошибку в класс Error
+        die ('Connection error:' . $e->getMessage());
+    }
     // Возвращаем заполненный настройками объект глобального класса PDO
     return $dbh;
 }
