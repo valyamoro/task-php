@@ -180,30 +180,35 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
     return (bool) $result;
 }
 
-// Функция обновляющая информацию о пользователе
-// Принимает объект глобального класса PDO
-// Принимает айди нужного пользователя.
-// Принимает переменные с новыми данными
-// Ничего не возвращает.
-function updateUser(\PDO $connection, int $userId, string $newName, string $newEmail, string $newPhone): never
+/**
+ * @param PDO $connection
+ * @param array $data
+ * @param int $userId
+ * @return array
+ */
+function updateUser(\PDO $connection, array $data, int $userId): array
 {
     // Запрос обновляющий информацию о пользователе по айди.
-    $sql = "UPDATE users SET name = :name, email = :email, phone_number = :phone_number WHERE id = :id";
+    $sql = "UPDATE users SET name = :name, email = :email, phone_number = :phone_number, password = :password WHERE id = :id";
 
     // Подготовка запроса.
     $sth = $connection->prepare($sql);
 
-    // Связываем ИМЕНОВАННЫЕ параметры запроса с нужной переменной.
-    $sth->bindParam(':name', $newName, PDO::PARAM_STR);
-    $sth->bindParam(':email', $newEmail, PDO::PARAM_STR);
-    $sth->bindParam(':phone_number', $newPhone, PDO::PARAM_STR);
-    $sth->bindParam(':id', $userId, PDO::PARAM_INT);
+    // Выполняем запрос, передвая в него измененные данные пользователя.
+    $sth->execute([
+        ':name' => $data['name'],
+        ':email' => $data['email'],
+        ':phone_number' => $data['phone'],
+        ':password' => $data['password'],
+        ':id' => $userId
+	]);
 
-    // Выполняем запрос.
-    $sth->execute();
-    // Прерываем выполнение функции.
-    die;
+    // Возвращаем массив измененных данных
+    // Т.к валидации нет, то беру $data напрямую.
+    return (array) $data;
 }
+
+
 
 // Функция удаления пользователя из БД.
 // Принимает на вход объект глобального класса PDO.
@@ -251,10 +256,13 @@ try {
         $deleteUser = deleteUser($connectionDB, $id);
     } elseif ($action === 'update') {
         // Обновляем пользователя.
-        $name = 'test2';
-        $email = 'test2@gmail.com';
-        $phone = '7891341231';
-        $updateUser = updateUser($connectionDB, $id, $name, $email, $phone);
+        $data = [
+            'name' => 'test4',
+            'email' => 'test3@gmail.com',
+            'phone' => '7891541231',
+            'password' => password_hash('zxcv', PASSWORD_DEFAULT),
+        ];
+        $updateUser = updateUser($connectionDB, $data, $id);
     } elseif ($action === 'save') {
         // Добавляем пользователя.
         $data = [
