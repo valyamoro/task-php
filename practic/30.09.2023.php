@@ -8,7 +8,7 @@ function dump(mixed $data): void
     echo '<pre>'; \print_r($data); echo '</pre>';
 }
 
-// Функция возвращает либо объект класса из глобальной области видимости PDO либо значение null
+// Возвращает PDO||Exception
 function connectionDB(): ?\PDO
 {
     static $dbh;
@@ -20,7 +20,7 @@ function connectionDB(): ?\PDO
     try {
         $dbh = new \PDO(
         // Задаем строку DSN содержащая информацию для подключения к mysql
-            'mysql:host=localhost;dbname=mvc-int-shop;charset=utf8mb4',
+            'mysql:host=localhost;dbname=mvcz-int-shop;charset=utf8mb4',
             // Задаем имя пользователя для строки DSN
             'root',
             // Задаем пароль для строки DSN
@@ -40,7 +40,9 @@ function connectionDB(): ?\PDO
         );
     // Обработка возможных исключений.
     } catch (\PDOException $e) {
-        // Если не получается подключится, то отправляет ошибку в класс Error
+        // Если не получается подключится, то отправляет ошибку в класс PDOException
+        // и в файл errors.log.
+        file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
         die ('Connection error:' . $e->getMessage());
     }
     // Возвращаем заполненный настройками объект глобального класса PDO
@@ -236,13 +238,6 @@ function deleteUser(\PDO $connection, int $userId): bool
 }
 
 $connectionDB = connectionDB();
-print_r(deleteUser($connectionDB, 19));
-
-
-// Создаем переменную содержащую информацию о всех пользователях.
-// Передаем переменную с информацией о БД и таблицу в качестве параметров.
-$users = getUsers($connectionDB, 'email');
-
 
 // Модель исключений "вылавливающая возможные ошибки"
 try {
@@ -254,7 +249,7 @@ try {
 
     if ($action === 'delete') {
         // Удаляем пользователя.
-        $deleteUser = deleteUser($connectionDB, $id);
+        $deleteUser = deleteUser($connectionDB, 24);
     } elseif ($action === 'update') {
         // Обновляем пользователя.
         $data = [
