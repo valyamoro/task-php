@@ -212,11 +212,12 @@ function updateUser(\PDO $connection, array $data, int $userId): array
     return (array) $data;
 }
 
-// Функция удаления пользователя из БД.
-// Принимает на вход объект глобального класса PDO.
-// Принимает айди нужного пользователя.
-// Ничего не возвращает.
-function deleteUser(\PDO $connection, int $userId): never
+/**
+ * @param PDO $connection
+ * @param int $userId
+ * @return bool
+ */
+function deleteUser(\PDO $connection, int $userId): bool
 {
     // Запрос удаляющий пользователя из БД по айди.
     $sql = 'DELETE FROM users WHERE id= :id';
@@ -224,19 +225,18 @@ function deleteUser(\PDO $connection, int $userId): never
     // Подготовка запроса.
     $sth = $connection->prepare($sql);
 
-    // Связываем именной параметр с переменной айди пользователя.
-    $sth->bindParam(':id', $userId, PDO::PARAM_INT);
+    // Решил не использовать bindParam, т.к тут не нужна защита от SQL-инъекций.
 
     // Выполняем запрос
-    $result = $sth->execute();
+    $result = $sth->execute([':id' => $userId]);
 
-    $sth->execute();
+    // Возвращаем true, если пользователь удалился.
+    return (bool) $result;
 
-    // Прерываем выполнение функции.
-    die;
 }
 
 $connectionDB = connectionDB();
+print_r(deleteUser($connectionDB, 19));
 
 
 // Создаем переменную содержащую информацию о всех пользователях.
