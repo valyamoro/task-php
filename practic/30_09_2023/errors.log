@@ -99,3 +99,4 @@ Error delete user
 Error delete user
 Error delete user
 Error delete user
+PDO::quote(): Argument #1 ($string) must be of type string, null given

@@ -23,3 +23,8 @@ Stack trace:
 #0 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(183): PDOStatement->execute()
 #1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(384): saveUser()
 #2 {main}
+PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'LIMIT 1' at line 1 in C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php:182
+Stack trace:
+#0 C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php(182): PDOStatement->execute()
+#1 C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php(388): saveUser()
+#2 {main}
