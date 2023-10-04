@@ -311,24 +311,31 @@ function updateUser(\PDO $connection, array $data, int $userId): array
  */
 function deleteUser(\PDO $connection, int $userId): bool
 {
-    // Запрос удаляющий пользователя из БД по айди.
-    $query = 'DELETE FROM users WHERE id= :id';
+    // Обработчик системных ошибок.
+    try {
+        // Запрос удаляющий пользователя из БД по айди.
+        $query = 'DELETE FROM users WHERE id=?';
 
-    // Подготовка запроса.
-    $sth = $connection->prepare($query);
+        // Подготовка запроса.
+        $sth = $connection->prepare($query);
 
-    // Решил не использовать bindParam, т.к тут не нужна защита от SQL-инъекций.
+        // Выполняем запрос
+        $result = $sth->execute([$userId]);
 
-    // Выполняем запрос
-    $result = $sth->execute([':id' => $userId]);
+        // Обработчик пользовательских ошибок.
+        if (!$result) {
+            // Выбрасываем ошибку в класс Error если есть.
+            throw new \Error('Error delete user');
+        }
 
-    if (!$result) {
-        // Выбрасываем ошибку в класс Error если есть.
-        throw new \Error('Error delete user');
+    // Ловим исключения и обрабатываем их в специальной функции.
+    } catch (\Exception $e) {
+        // Записываем исключения в файл и выводим ошибку на экран.
+        writeExceptionFile($e);
     }
-    // Возвращаем true, если пользователь удалился.
-    return (bool) $result;
 
+    // Возвращаем true, если пользователя удалили.
+    return (bool) $result;
 }
 
 $connectionDB = connectionDB();
