@@ -91,3 +91,11 @@ Stack trace:
 #1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(198): checkUserEmail()
 #2 {main}
 PDO::quote(): Argument #1 ($string) must be of type string, int given
+Error delete user
+Error delete user
+Error delete user
+Error delete user
+Error delete user
+Error delete user
+Error delete user
+Error delete user
