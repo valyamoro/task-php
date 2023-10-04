@@ -72,3 +72,6 @@ Error check user phone
 Error check user phone
 Error check user phone
 Error check user phone
+SQLSTATE[42000] [1115] Unknown character set: 'utf8mwqddwqb4'
+SQLSTATE[42000] [1115] Unknown character set: 'utf8mwqddwqb4'
+getUsers(): Argument #1 ($connection) must be of type PDO, null given, called in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php on line 295

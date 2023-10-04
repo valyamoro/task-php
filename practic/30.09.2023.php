@@ -2,67 +2,64 @@
 declare(strict_types=1);
 error_reporting(-1);
 
-// Функция конвертирует данные в более удобный формат.
+/**
+ * Выводим удобочитаемую информацию о переменной.
+ * @param mixed $data
+ * @return void
+ */
 function dump(mixed $data): void
 {
     echo '<pre>'; \print_r($data); echo '</pre>';
 }
 
-// Возвращает PDO|null|Exception
+/**
+ * Подключемся к БД через глобальный класс PDO
+ * @return PDO|null
+ */
 function connectionDB(): ?\PDO
 {
-    static $dbh;
+    // При последующих вызовах этой функции значение переменной сохранится.
+    static $dbh = null;
 
-    /* Зачем тут проверка на null, если при возвращении null
-    оно будет автоматически конвертироваться в Exception
-    и возвращать именно описание ошибки?
-    */
-//    if (!\is_null($dbh)) {
-//        return $dbh;
-//    }
-    // Может быть стоит проверять через isset чтобы избежать
-    // лишних подключений к бд?
-
-    // Создаем экземпляр глобального класса PDO
-    if (isset($dbh)) {
-        file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
-        die ('БД уже подключена:' . $e->getMessage());
-    } else {
-        try {
-            $dbh = new \PDO(
-            // Задаем строку DSN содержащая информацию для подключения к mysql
-                'mysql:host=localhost;dbname=mvc-int-shop;charset=utf8mb4',
-                // Задаем имя пользователя для строки DSN
-                'root',
-                // Задаем пароль для строки DSN
-                '',
-                // Задаем для драйвера настройки подключения.
-                [
-                    // Устанавливаем режим сообщения об ошибках, выбрасывающий
-                    // исключение PDOException, отправляющий код ошибки и ее описание.
-                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-
-                    // Указываем режим извлечения данных, в виде ассоциативных массивов.
-                    \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-
-                    // Устанавливаем расширенную версию utf-8 более подходящую для работы с БД
-                    \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4'",
-                ]
-            );
-            // Обработка возможных исключений.
-        } catch (\PDOException $e) {
-            // Если не получается подключится, то отправляет ошибку в класс PDOException
-            // и в файл errors.log.
-            file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
-            die ('Connection error:' . $e->getMessage());
-        }
+    // Если функцию уже вызывали, то возвращаем текущее значение.
+    if (!\is_null($dbh)) {
+        return $dbh;
     }
-    // Возвращаем заполненный настройками объект глобального класса PDO
+
+    // Модель исключений.
+    try {
+        // Создаем объект, и задаем настройки для подключения к БД.
+        $dbh = new \PDO(
+            // Строка с источником данных.
+            'mysql:host=localhost;dbname=mvc-int-shop;charset=utf8mb4',
+            // Имя хоста.
+            'root',
+            // Пароль для подключения.
+            '',
+            // Опции объекта.
+            [
+                // Режим сообщения об ошибок в режиме выбрасывания PDOException.
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+
+                // Режим выборки, при котором каждая строка из БД возвращается в виде ассоциативного массива.
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+
+                // При подключении автоматически выполняем команду установки кодировки.
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'
+            ]
+        );
+    // Если есть ошибки, то они преобразуются в PDOException и вылавливаются тут:
+    } catch (\PDOException $e) {
+        // Прерываем выполнение скрипта и выводим ошибку на экран.
+        die ('Connection error: ' . $e->getMessage());
+    }
+    // Возвращаем объект PDO с настройками.
     return $dbh;
 }
 
 
 /**
+ * Получаем массив с данными пользователей.
  * @param PDO $connection
  * @param string $order
  * @return array
@@ -91,6 +88,7 @@ function getUsers(\PDO $connection, string $order): array
 }
 
 /**
+ * Получаем массив с данными пользователя.
  * @param PDO $connection
  * @param int $id
  * @return array
@@ -121,6 +119,7 @@ function getUser(\PDO $connection, int $id): array
 }
 
 /**
+ * Добавляем нового пользователя.
  * @param PDO $connection
  * @param array $data
  * @return int
@@ -129,7 +128,7 @@ function saveUser(\PDO $connection, array $data): int
 {
     // Запрос добавляющий запись данных пользователя в таблицу users.
     // Запрос содержит плейсхолдеры для будущих значений.
-    $query = 'insert into users (name, email, phone_number, password, is_active) VALUES (?,?,?,?,?)';
+    $query = 'INSERT INTO users (name, email, phone_number, password, is_active) VALUES (?,?,?,?,?)';
 
     // Подготовка запроса.
     $sth = $connection->prepare($query);
@@ -158,7 +157,7 @@ function saveUser(\PDO $connection, array $data): int
 function checkUserEmail(\PDO $connection, string $email): bool
 {
     // Собираем все почты всех пользователей.
-    $query = "SELECT * FROM users WHERE email=?";
+    $query = 'SELECT * FROM users WHERE email=?';
 
     // Подготовка запроса.
     $sth = $connection->prepare($query);
@@ -185,7 +184,7 @@ function checkUserEmail(\PDO $connection, string $email): bool
 function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
 {
     // Собираем все номера телефонов всех пользователей.
-    $query = "SELECT * FROM users where phone_number=?";
+    $query = 'SELECT * FROM users where phone_number=?';
 
     // Подготовка запроса.
     $sth = $connection->prepare($query);
@@ -206,6 +205,7 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
 }
 
 /**
+ * Обновляем данные пользователя
  * @param PDO $connection
  * @param array $data
  * @param int $userId
@@ -214,10 +214,10 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
 function updateUser(\PDO $connection, array $data, int $userId): array
 {
     // Запрос обновляющий информацию о пользователе по айди.
-    $sql = "UPDATE users SET name = :name, email = :email, phone_number = :phone_number, password = :password WHERE id = :id";
+    $query = 'UPDATE users SET name = :name, email = :email, phone_number = :phone_number, password = :password WHERE id = :id';
 
     // Подготовка запроса.
-    $sth = $connection->prepare($sql);
+    $sth = $connection->prepare($query);
 
     /* Решил оставить bindParam, т.к он обеспечивает защиту от SQL-инъекций
     и явно указывает тип принимаемых значений.
@@ -242,6 +242,7 @@ function updateUser(\PDO $connection, array $data, int $userId): array
 }
 
 /**
+ * Удаляем пользователя с его данными.
  * @param PDO $connection
  * @param int $userId
  * @return bool
@@ -249,10 +250,10 @@ function updateUser(\PDO $connection, array $data, int $userId): array
 function deleteUser(\PDO $connection, int $userId): bool
 {
     // Запрос удаляющий пользователя из БД по айди.
-    $sql = 'DELETE FROM users WHERE id= :id';
+    $query = 'DELETE FROM users WHERE id= :id';
 
     // Подготовка запроса.
-    $sth = $connection->prepare($sql);
+    $sth = $connection->prepare($query);
 
     // Решил не использовать bindParam, т.к тут не нужна защита от SQL-инъекций.
 
@@ -273,7 +274,7 @@ $connectionDB = connectionDB();
 // Модель исключений "вылавливающая возможные ошибки"
 try {
     // Определяем метод взаимодействия с данными пользователя.
-    $action = 'check';
+    $action = 'getUsers';
 
     // Определяем айди пользователя.
     $id = 26;
