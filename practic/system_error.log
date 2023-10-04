@@ -3,3 +3,23 @@ Stack trace:
 #0 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(91): PDOStatement->execute()
 #1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(367): getUsers()
 #2 {main}
+PDOException: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php:183
+Stack trace:
+#0 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(183): PDOStatement->execute()
+#1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(384): saveUser()
+#2 {main}
+PDOException: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php:183
+Stack trace:
+#0 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(183): PDOStatement->execute()
+#1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(384): saveUser()
+#2 {main}
+PDOException: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php:183
+Stack trace:
+#0 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(183): PDOStatement->execute()
+#1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(384): saveUser()
+#2 {main}
+PDOException: SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php:183
+Stack trace:
+#0 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(183): PDOStatement->execute()
+#1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(384): saveUser()
+#2 {main}
