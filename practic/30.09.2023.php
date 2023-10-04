@@ -58,9 +58,16 @@ function connectionDB(): ?\PDO
     return $dbh;
 }
 
-// ФУНКЦИЯ ОБРАБОТКИ ОШИБОК!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// Должна отправлять ошибки в файл.
-// И выводить на экран.
+/**
+ * Функция записи ошибок в файл
+ * @param string $message
+ * @return string
+ */
+function writeErrorsFile(object $message): string
+{
+    file_put_contents('errors.log', $message . PHP_EOL, FILE_APPEND);
+    die ($message->getMessage());
+}
 
 /**
  * Получаем массив с данными пользователей.
@@ -166,7 +173,7 @@ function checkUserEmail(\PDO $connection, string $email): bool
 {
     try {
         // Запрос на получение почт всех пользователей.
-        $query = 'SELECT * FROM users WHERE email=?';
+        $query = 'SELECTs * FROM users WHERE email=?';
 
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
@@ -181,15 +188,14 @@ function checkUserEmail(\PDO $connection, string $email): bool
         return (bool) $result;
 
     } catch (\Exception $e) {
-        // Записываем в файл информацию об ошибка, если в есть проблема в синтаксисе запроса.
-        file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
-        // Заваршаем выполнения скрипта и отправляем ошибку
-        die ($e->getMessage());
+        // Записываем исключения в файл и выводим ошибку на экран.
+        writeErrorsFile($e);
     }
+    return (bool) $result;
 }
 
 $connectionDB = connectionDB();
-print_r(checkUserEmail($connectionDB, 'test3@gmail.com'));
+checkUserEmail($connectionDB, 'test3@gmail.com');
 
 die;
 
