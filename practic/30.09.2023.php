@@ -160,15 +160,28 @@ function saveUser(\PDO $connection, array $data): int
     try {
         // Запрос добавляющий пользователя с данными.
         // СДЕЛАТЬ ИМЕНОВАННЫЕ ПАРАМЕТРЫ, ГДЕ ИХ БОЛЬШЕ ДВУХ.
-        $query = 'INSERT INTO users (name, email, phone_number, password, is_active) VALUES (?,?,?,?,?)';
+
+        $query = "INSERT INTO users (name, email, phone_number, password, is_active) VALUES(:name, :email, :phone_number, :password, :is_active)";
 
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
 
+        // Экранируем вводимые данные пользователя.
+        $validateData['name'] = $connection->quote($data['name']);
+        $validateData['email'] = $connection->quote($data['email']);
+        $validateData['phone_number'] = $connection->quote($data['phone_number']);
+        $validateData['password'] = $connection->quote($data['password']);
+        $validateData['is_active'] = $connection->quote($data['is_active']);
         // Передаем данные пользователя для позиционных параметров, перед этим удаляя все ключи.
         // И запускаем подготовленный запрос на выполнение.
         // ЭКРАНИРОВАТЬ ЭЛЕМЕНТЫ *
-        $sth->execute(\array_values($data));
+        $sth->execute([
+            ':name' => $validateData['name'],
+            ':email' => $validateData['email'],
+            ':phone_number' => $validateData['phone_number'],
+            ':password' => $validateData['password'],
+            ':is_active' => $validateData['is_active']
+        ]);
 
         // Получаем ID последней вставленной строки.
         $result = $connection->lastInsertId();
@@ -346,7 +359,7 @@ try {
     $action = 'getUsers';
 
     // Определяем айди пользователя.
-    $id = 28;
+    $id = 34;
     if ($action === 'delete') {
         // Удаляем пользователя.
         $deleteUser = deleteUser($connectionDB, $id);
@@ -362,11 +375,11 @@ try {
     } elseif ($action === 'save') {
         // Добавляем пользователя.
         $data = [
-            'name' => 'test3',
-            'email' => 'test3@gmail.com',
-            'phone_number' => '132132312',
-            'password' => password_hash('1234124', PASSWORD_DEFAULT),
-            'is_active' => 1
+            'name' => 'test3a',
+            'email' => 'teasst3@gmail.com',
+            'phone_number' => '1321asd32312',
+            'password' => password_hash('1234asd124', PASSWORD_DEFAULT),
+            'is_active' => '1'
         ];
         $saveUser = saveUser($connectionDB, $data);
     } elseif ($action === 'check') {
