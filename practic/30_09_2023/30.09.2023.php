@@ -148,6 +148,7 @@ function getUser(\PDO $connection, int $id): array
     return (array) $result;
 }
 
+
 /**
  * Добавляем нового пользователя.
  * @param PDO $connection
@@ -205,7 +206,7 @@ function checkUserEmail(\PDO $connection, string $email): bool
     // Обработчик системных ошибок.
     try {
         // Запрос на получение почт всех пользователей.
-        $query = 'SELECT * FROM users WHERE email=?';
+        $query = 'SELECT * FROM users WHERE email=? LIMIT 1';
 
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
@@ -240,7 +241,7 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
 {
     try {
         // Запрос на получение номеров телефонов всех пользователей.
-        $query = 'SELECT * FROM users where phone_number=?';
+        $query = 'SELECT * FROM users where phone_number=? LIMIT 1';
 
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
@@ -277,7 +278,7 @@ function updateUser(\PDO $connection, array $data, int $userId): array
     // Обработчик системных ошибок.
     try {
         // Запрос для обновления данных пользователя.
-        $query = 'UPDATE users SET name = :name, email = :email, phone_number = :phone_number, password = :password WHERE id = :id';
+        $query = 'UPDATE users SET name = :name, email = :email, phone_number = :phone_number, password = :password WHERE id = :id LIMIT 1';
 
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
@@ -362,7 +363,7 @@ try {
     $action = 'getUsers';
 
     // Определяем айди пользователя.
-    $id = 30;
+    $id = 31;
     if ($action === 'delete') {
         // Удаляем пользователя.
         $deleteUser = deleteUser($connectionDB, $id);
@@ -371,7 +372,7 @@ try {
         $data = [
             'name' => 'test5',
             'email' => 'test3@gmail.com',
-            'phone' => '7891541231',
+            'phone_number' => '7891541231',
             'password' => password_hash('fada', PASSWORD_DEFAULT),
         ];
         $updateUser = updateUser($connectionDB, $data, $id);
@@ -388,7 +389,7 @@ try {
     } elseif ($action === 'check') {
         // Проверяем наличие вводимых данных в БД.
         $email = 'tezst@gmail.com';
-        $phone = '789154123w1';
+        $phone = '7051241w2432';
         $checkUserEmail = checkUserEmail($connectionDB, $email);
         $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $phone);
         if (!($checkUserPhoneNumber || $checkUserEmail)) {
