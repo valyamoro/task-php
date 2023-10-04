@@ -1,0 +1,5 @@
+PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECцT * FROM users ORDER BY name DESC' at line 1 in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php:91
+Stack trace:
+#0 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(91): PDOStatement->execute()
+#1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(367): getUsers()
+#2 {main}
