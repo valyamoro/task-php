@@ -77,3 +77,5 @@ SQLSTATE[42000] [1115] Unknown character set: 'utf8mwqddwqb4'
 getUsers(): Argument #1 ($connection) must be of type PDO, null given, called in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php on line 295
 Users not found
 saveUser(): Argument #2 ($data) must be of type array, null given, called in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php on line 306
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELEsCT * FROM users WHERE email='test3@gmail.com'' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECTs * FROM users WHERE email='test3@gmail.com'' at line 1

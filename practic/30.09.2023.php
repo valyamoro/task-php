@@ -58,6 +58,9 @@ function connectionDB(): ?\PDO
     return $dbh;
 }
 
+// ФУНКЦИЯ ОБРАБОТКИ ОШИБОК!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Должна отправлять ошибки в файл.
+// И выводить на экран.
 
 /**
  * Получаем массив с данными пользователей.
@@ -161,26 +164,34 @@ function saveUser(\PDO $connection, array $data): int
  */
 function checkUserEmail(\PDO $connection, string $email): bool
 {
-    // Запрос на получение почт всех пользователей.
-    $query = 'SELECT * FROM users WHERE email=?';
+    try {
+        // Запрос на получение почт всех пользователей.
+        $query = 'SELECT * FROM users WHERE email=?';
 
-    // Подготавливаем запрос к выполнению.
-    $sth = $connection->prepare($query);
+        // Подготавливаем запрос к выполнению.
+        $sth = $connection->prepare($query);
+        // Передаем почту для позиционного параметра.
+        // И запускаем подготовленный запрос на выполнение.
+        $sth->execute([$email]);
 
-    // Передаем почту для именованного параметра.
-    // И запускаем подготовленный запрос на выполнение.
-    $sth->execute([$email]);
-    // Создаем переменную содержащую всю информацию о пользователе, иначе false.
-    $result = $sth->fetch();
+        // Создаем переменную содержащую всю информацию о пользователе, иначе false.
+        $result = $sth->fetch();
 
-    // Использую строгое равенство, т.к null может быть приведен из других типов
-    if ($result === null) {
-        // Выбрасываем ошибку в класс Error если есть.
-        throw new \Error('Error check user email');
+        // Возвращаем булево значение true, если пользователь с такой почтой существует.
+        return (bool) $result;
+
+    } catch (\Exception $e) {
+        // Записываем в файл информацию об ошибка, если в есть проблема в синтаксисе запроса.
+        file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
+        // Заваршаем выполнения скрипта и отправляем ошибку
+        die ($e->getMessage());
     }
-    // Возвращаем булево значение true, если пользователь с такой почтой существует.
-    return (bool) $result;
 }
+
+$connectionDB = connectionDB();
+print_r(checkUserEmail($connectionDB, 'test3@gmail.com'));
+
+die;
 
 /**
  * Проверка на наличие пользователя в БД по номеру телефона.
@@ -281,7 +292,7 @@ $connectionDB = connectionDB();
 // Модель исключений "вылавливающая возможные ошибки"
 try {
     // Определяем метод взаимодействия с данными пользователя.
-    $action = 'save';
+    $action = 'getUsers';
 
     // Определяем айди пользователя.
     $id = 28;
