@@ -79,3 +79,14 @@ Users not found
 saveUser(): Argument #2 ($data) must be of type array, null given, called in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php on line 306
 SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELEsCT * FROM users WHERE email='test3@gmail.com'' at line 1
 SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECTs * FROM users WHERE email='test3@gmail.com'' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECTs * FROM users WHERE email='test3@gmail.com'' at line 1
+PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECTs * FROM users WHERE email='test3@gmail.com'' at line 1 in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php:182
+Stack trace:
+#0 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(182): PDOStatement->execute()
+#1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(198): checkUserEmail()
+#2 {main}
+PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECTs * FROM users WHERE email='test3@gmail.com'' at line 1 in C:\OSPanel\domains\tasks.my\practic\30.09.2023.php:182
+Stack trace:
+#0 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(182): PDOStatement->execute()
+#1 C:\OSPanel\domains\tasks.my\practic\30.09.2023.php(198): checkUserEmail()
+#2 {main}
