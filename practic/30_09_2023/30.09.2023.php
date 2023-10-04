@@ -184,12 +184,6 @@ function saveUser(\PDO $connection, array $data): int
         // Получаем ID последней вставленной строки.
         $result = $connection->lastInsertId();
 
-        // Обработчик пользовательских ошибок.
-        if (!$result) {
-            // Создаем объект глобального класса содержащий информацию об ошибке.
-            throw new \Error('Error save user');
-        }
-
     // Ловим исключения и обрабатываем их в специальной функции.
     } catch (\Exception $e) {
         // Записываем исключения в файл и выводим ошибку на экран.
@@ -332,7 +326,7 @@ function deleteUser(\PDO $connection, int $userId): bool
     // Обработчик системных ошибок.
     try {
         // Запрос для удаления пользователя по айди.
-        $query = 'DELETE FROM users WHERE id=?';
+        $query = 'DELETE FROM users WHERE id=? LIMIT 1';
 
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
@@ -341,9 +335,12 @@ function deleteUser(\PDO $connection, int $userId): bool
         // И запускаем подготовленный запрос на выполнение.
         $result = $sth->execute([$userId]);
 
+        // Получаем количество удаленых строк.
+        $rowCount = $sth->rowCount();
+
         // Обработчик пользовательских ошибок.
-        if (!$result) {
-            // Выбрасываем ошибку в класс Error если есть.
+        if (!$rowCount) {
+            // Выбрасываем ошибку в класс Error, если кол-во затронутых строк равно нулю.
             throw new \Error('Error delete user');
         }
 
@@ -365,7 +362,7 @@ try {
     $action = 'getUsers';
 
     // Определяем айди пользователя.
-    $id = 34;
+    $id = 30;
     if ($action === 'delete') {
         // Удаляем пользователя.
         $deleteUser = deleteUser($connectionDB, $id);
