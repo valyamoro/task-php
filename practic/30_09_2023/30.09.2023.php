@@ -144,7 +144,8 @@ function getUser(\PDO $connection, int $id): array
         writeExceptionFile($e);
     }
 
-    // Возвращаем массив данных пользователя.
+    // Возвращаем ассоциативный массив данных пользователя.
+    // Ключи берутся из название столбцов.
     return (array) $result;
 }
 
@@ -205,7 +206,7 @@ function checkUserEmail(\PDO $connection, string $email): bool
 {
     // Обработчик системных ошибок.
     try {
-        // Запрос на получение почт всех пользователей.
+        // Запрос на получение почты пользователя.
         $query = 'SELECT * FROM users WHERE email=? LIMIT 1';
 
         // Подготавливаем запрос к выполнению.
@@ -240,7 +241,7 @@ function checkUserEmail(\PDO $connection, string $email): bool
 function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
 {
     try {
-        // Запрос на получение номеров телефонов всех пользователей.
+        // Запрос на получение номера телефона пользователя.
         $query = 'SELECT * FROM users where phone_number=? LIMIT 1';
 
         // Подготавливаем запрос к выполнению.
@@ -360,7 +361,7 @@ $connectionDB = connectionDB();
 // Модель исключений "вылавливающая возможные ошибки"
 try {
     // Определяем метод взаимодействия с данными пользователя.
-    $action = 'getUsers';
+    $action = 'save';
 
     // Определяем айди пользователя.
     $id = 31;
