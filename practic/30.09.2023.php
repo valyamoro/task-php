@@ -1,9 +1,8 @@
 <?php
 declare(strict_types=1);
+error_reporting(-1);
 
 use JetBrains\PhpStorm\NoReturn;
-
-error_reporting(-1);
 
 /**
  * Выводим удобочитаемую информацию о переменной.
@@ -21,7 +20,7 @@ function dump(mixed $data): void
  */
 function connectionDB(): ?\PDO
 {
-    // При последующих вызовах этой функции значение переменной сохранится.
+    // При последующих вызовах этой функции переменная не будет пересоздаваться.
     static $dbh = null;
 
     // Если функцию уже вызывали, то возвращаем текущее значение.
@@ -41,7 +40,7 @@ function connectionDB(): ?\PDO
             '',
             // Опции объекта.
             [
-                // Режим сообщения об ошибок в режиме выбрасывания PDOException.
+                // Режим сообщения об ошибок в режиме выбрасывания исключений.
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 
                 // Режим выборки, при котором каждая строка из БД возвращается в виде ассоциативного массива.
@@ -62,12 +61,14 @@ function connectionDB(): ?\PDO
 }
 
 /**
- * Функция записи ошибок в файл
+ * Функция записи системных ошибок в файл
  * @param object $message
  */
 #[NoReturn] function writeExceptionFile(object $message): void
 {
+    // Записываем системную ошибку в файл.
     file_put_contents('system_error.log', $message . PHP_EOL, FILE_APPEND);
+    // Завершаем выполнение скрипта и выводим ошибку на экран.
     die ($message->getMessage());
 }
 
@@ -126,8 +127,7 @@ function getUser(\PDO $connection, int $id): array
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
 
-        // Передаем айди для именовоного параметра на вход и запускаем подготовленный запрос на выполнение.
-        // Прогнать айди через quote *
+        // Передаем айди для позиционного параметра на вход и запускаем подготовленный запрос на выполнение.
         $sth->execute([$id]);
 
         // Извлекаем следующую строку с данными пользователя из результирующего набора.
@@ -159,9 +159,7 @@ function saveUser(\PDO $connection, array $data): int
     // Обработчик системных ошибок.
     try {
         // Запрос добавляющий пользователя с данными.
-        // СДЕЛАТЬ ИМЕНОВАННЫЕ ПАРАМЕТРЫ, ГДЕ ИХ БОЛЬШЕ ДВУХ.
-
-        $query = "INSERT INTO users (name, email, phone_number, password, is_active) VALUES(:name, :email, :phone_number, :password, :is_active)";
+        $query = 'INSERT INTO users (name, email, phone_number, password, is_active) VALUES(:name, :email, :phone_number, :password, :is_active)';
 
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
@@ -172,9 +170,9 @@ function saveUser(\PDO $connection, array $data): int
         $validateData['phone_number'] = $connection->quote($data['phone_number']);
         $validateData['password'] = $connection->quote($data['password']);
         $validateData['is_active'] = $connection->quote($data['is_active']);
-        // Передаем данные пользователя для позиционных параметров, перед этим удаляя все ключи.
+
+        // Передаем данные пользователя для именованных параметров.
         // И запускаем подготовленный запрос на выполнение.
-        // ЭКРАНИРОВАТЬ ЭЛЕМЕНТЫ *
         $sth->execute([
             ':name' => $validateData['name'],
             ':email' => $validateData['email'],
@@ -210,7 +208,7 @@ function saveUser(\PDO $connection, array $data): int
  */
 function checkUserEmail(\PDO $connection, string $email): bool
 {
-    // Обработчик системных.
+    // Обработчик системных ошибок.
     try {
         // Запрос на получение почт всех пользователей.
         $query = 'SELECT * FROM users WHERE email=?';
@@ -218,9 +216,12 @@ function checkUserEmail(\PDO $connection, string $email): bool
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
 
+        // Экранируем почту.
+        $validateEmail = $connection->quote($email);
+
         // Передаем почту для позиционного параметра.
         // И запускаем подготовленный запрос на выполнение.
-        $sth->execute([$email]);
+        $sth->execute([$validateEmail]);
 
         // Получаем информацию о пользователе, если почта совпала.
         $result = $sth->fetch();
@@ -250,9 +251,12 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
 
+        // Экранируем номер телефона.
+        $validatePhoneNumber = $connection->quote($phoneNumber);
+
         // Передаем номер телефона для позиционного параметра.
         // И запускаем подготовленный запрос на выполнение.
-        $sth->execute([$phoneNumber]);
+        $sth->execute([$validatePhoneNumber]);
 
         // Получаем информацию о пользователе, если номер телефона совпал.
         $result = $sth->fetch();
@@ -297,6 +301,7 @@ function updateUser(\PDO $connection, array $data, int $userId): array
             ':email' => $validateData['email'],
             ':phone_number' => $validateData['phone_number'],
             ':password' => $validateData['password'],
+            // Айди не проходит экранирование, т.к он будет получен с сессии, либо введен админом *
             ':id' => $userId
         ]);
 
@@ -326,13 +331,14 @@ function deleteUser(\PDO $connection, int $userId): bool
 {
     // Обработчик системных ошибок.
     try {
-        // Запрос удаляющий пользователя из БД по айди.
+        // Запрос для удаления пользователя по айди.
         $query = 'DELETE FROM users WHERE id=?';
 
-        // Подготовка запроса.
+        // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
 
-        // Выполняем запрос
+        // Передаем позиционный параметр айди.
+        // И запускаем подготовленный запрос на выполнение.
         $result = $sth->execute([$userId]);
 
         // Обработчик пользовательских ошибок.
