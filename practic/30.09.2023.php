@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+
+use JetBrains\PhpStorm\NoReturn;
+
 error_reporting(-1);
 
 /**
@@ -48,7 +51,7 @@ function connectionDB(): ?\PDO
                 \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'
             ]
         );
-    // Если есть ошибки, то они преобразуются в PDOException и вылавливаются тут:
+    // Ловим исключения.
     } catch (\PDOException $e) {
         // Прерываем выполнение скрипта и выводим ошибку на экран.
         die ('Connection error: ' . $e->getMessage());
@@ -60,12 +63,11 @@ function connectionDB(): ?\PDO
 
 /**
  * Функция записи ошибок в файл
- * @param string $message
- * @return string
+ * @param object $message
  */
-function writeErrorsFile(object $message): string
+#[NoReturn] function writeExceptionFile(object $message): void
 {
-    file_put_contents('errors.log', $message . PHP_EOL, FILE_APPEND);
+    file_put_contents('system_error.log', $message . PHP_EOL, FILE_APPEND);
     die ($message->getMessage());
 }
 
@@ -77,22 +79,30 @@ function writeErrorsFile(object $message): string
  */
 function getUsers(\PDO $connection, string $order): array
 {
-    // Запрос на получение данных пользователей.
-    $query = "SELECT * FROM users ORDER BY {$order} DESC";
+    // Обработчик системных ошибок.
+    try {
+        // Запрос на получение данных пользователей.
+        $query = "SELECT * FROM users ORDER BY {$order} DESC";
 
-    // Подготавливаем запрос к выполнению.
-    $sth = $connection->prepare($query);
+        // Подготавливаем запрос к выполнению.
+        $sth = $connection->prepare($query);
 
-    // Запускаем подготовленный запрос на выполнение.
-    $sth->execute();
+        // Запускаем подготовленный запрос на выполнение.
+        $sth->execute();
 
-    // Загружаем в переменную оставшиеся строки из набора результатов.
-    $result = $sth->fetchAll();
+        // Загружаем в переменную оставшиеся строки из набора результатов.
+        $result = $sth->fetchAll();
 
-    // Обработчик ошибок.
-    if (!$result) {
-        // Выбрасываем ошибку в конструктор объекта класса и завершаем выполнение скрипта.
-        throw new \Error('Users not found');
+        // Обработчик пользовательских ошибок.
+        if (!$result) {
+            // Выбрасываем ошибку в конструктор объекта класса и завершаем выполнение скрипта.
+            throw new \Error('Users not found');
+        }
+
+    // Ловим исключения и обрабатываем их в специальной функции.
+    } catch (\Exception $e) {
+        // Записываем исключения в файл и выводим ошибку на экран.
+        writeExceptionFile($e);
     }
 
     // Возвращаем ассоциативный массив данных всех пользователей.
@@ -108,23 +118,30 @@ function getUsers(\PDO $connection, string $order): array
  */
 function getUser(\PDO $connection, int $id): array
 {
-    // Запрос на получение данных одного пользователя по айди.
-    $query = 'SELECT * FROM users WHERE id=? LIMIT 1';
+    // Обработчик системных ошибок.
+    try {
+        // Запрос на получение данных одного пользователя по айди.
+        $query = 'SELECT * FROM users WHERE id=? LIMIT 1';
 
-    // Подготавливаем запрос к выполнению.
-    $sth = $connection->prepare($query);
+        // Подготавливаем запрос к выполнению.
+        $sth = $connection->prepare($query);
 
-    // Передаем айди для именовоного параметра на вход и запускаем подготовленный запрос на выполнение.
-    // Прогнать айди через quote *
-    $sth->execute([$id]);
+        // Передаем айди для именовоного параметра на вход и запускаем подготовленный запрос на выполнение.
+        // Прогнать айди через quote *
+        $sth->execute([$id]);
 
-    // Извлекаем следующую строку с данными пользователя из результирующего набора.
-    $result = $sth->fetch();
+        // Извлекаем следующую строку с данными пользователя из результирующего набора.
+        $result = $sth->fetch();
 
-    // Обработчик ошибок.
-    if (!$result) {
-        // Выбрасываем ошибку в конструктор объекта класса и завершаем выполнение скрипта.
-        throw new \Error('User not found.');
+        // Обработчик пользовательских ошибок.
+        if (!$result) {
+            // Выбрасываем ошибку в конструктор объекта класса и завершаем выполнение скрипта.
+            throw new \Error('User not found.');
+        }
+    // Ловим исключения и обрабатываем их в специальной функции.
+    } catch (\Exception $e) {
+        // Записываем исключения в файл и выводим ошибку на экран.
+        writeExceptionFile($e);
     }
 
     // Возвращаем массив данных пользователя.
@@ -139,24 +156,33 @@ function getUser(\PDO $connection, int $id): array
  */
 function saveUser(\PDO $connection, array $data): int
 {
-    // Запрос добавляющий пользователя с данными.
-    $query = 'INSERT INTO users (name, email, phone_number, password, is_active) VALUES (?,?,?,?,?)';
+    // Обработчик системных ошибок.
+    try {
+        // Запрос добавляющий пользователя с данными.
+        // СДЕЛАТЬ ИМЕНОВАННЫЕ ПАРАМЕТРЫ, ГДЕ ИХ БОЛЬШЕ ДВУХ.
+        $query = 'INSERT INTO users (name, email, phone_number, password, is_active) VALUES (?,?,?,?,?)';
 
-    // Подготавливаем запрос к выполнению.
-    $sth = $connection->prepare($query);
+        // Подготавливаем запрос к выполнению.
+        $sth = $connection->prepare($query);
 
-    // Передаем данные пользователя для позиционных параметров, перед этим удаляя все ключи.
-    // И запускаем подготовленный запрос на выполнение.
-    // ЭКРАНИРОВАТЬ ЭЛЕМЕНТЫ *
-    $sth->execute(\array_values($data));
+        // Передаем данные пользователя для позиционных параметров, перед этим удаляя все ключи.
+        // И запускаем подготовленный запрос на выполнение.
+        // ЭКРАНИРОВАТЬ ЭЛЕМЕНТЫ *
+        $sth->execute(\array_values($data));
 
-    // Получаем ID последней вставленной строки.
-    $result = $connection->lastInsertId();
+        // Получаем ID последней вставленной строки.
+        $result = $connection->lastInsertId();
 
-    // Обработчик ошибок.
-    if (!$result) {
-        // Создаем объект глобального класса содержащий информацию об ошибке.
-        throw new \Error('Error save user');
+        // Обработчик пользовательских ошибок.
+        if (!$result) {
+            // Создаем объект глобального класса содержащий информацию об ошибке.
+            throw new \Error('Error save user');
+        }
+
+    // Ловим исключения и обрабатываем их в специальной функции.
+    } catch (\Exception $e) {
+        // Записываем исключения в файл и выводим ошибку на экран.
+        writeExceptionFile($e);
     }
 
     // Возвращаем айди последней созданной записи.
@@ -171,33 +197,30 @@ function saveUser(\PDO $connection, array $data): int
  */
 function checkUserEmail(\PDO $connection, string $email): bool
 {
+    // Обработчик системных.
     try {
         // Запрос на получение почт всех пользователей.
-        $query = 'SELECTs * FROM users WHERE email=?';
+        $query = 'SELECT * FROM users WHERE email=?';
 
         // Подготавливаем запрос к выполнению.
         $sth = $connection->prepare($query);
+
         // Передаем почту для позиционного параметра.
         // И запускаем подготовленный запрос на выполнение.
         $sth->execute([$email]);
 
-        // Создаем переменную содержащую всю информацию о пользователе, иначе false.
+        // Получаем информацию о пользователе, если почта совпала.
         $result = $sth->fetch();
 
-        // Возвращаем булево значение true, если пользователь с такой почтой существует.
-        return (bool) $result;
-
+    // Ловим исключения и обрабатываем их в специальной функции.
     } catch (\Exception $e) {
         // Записываем исключения в файл и выводим ошибку на экран.
-        writeErrorsFile($e);
+        writeExceptionFile($e);
     }
-    return (bool) $result;
+
+    // Возвращаем true, если пользователь с такой почтой существует, иначе false.
+    return (bool) $result ?? false;
 }
-
-$connectionDB = connectionDB();
-checkUserEmail($connectionDB, 'test3@gmail.com');
-
-die;
 
 /**
  * Проверка на наличие пользователя в БД по номеру телефона.
@@ -207,25 +230,28 @@ die;
  */
 function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
 {
-    // Собираем все номера телефонов всех пользователей.
-    $query = 'SELECT * FROM users where phone_number=?';
+    try {
+        // Запрос на получение номеров телефонов всех пользователей.
+        $query = 'SELECT * FROM users where phone_number=?';
 
-    // Подготовка запроса.
-    $sth = $connection->prepare($query);
+        // Подготавливаем запрос к выполнению.
+        $sth = $connection->prepare($query);
 
-    // Исполняем запрос передвая туда номер телефона пользователя.
-    $sth->execute([$phoneNumber]);
+        // Передаем номер телефона для позиционного параметра.
+        // И запускаем подготовленный запрос на выполнение.
+        $sth->execute([$phoneNumber]);
 
-    // Создаем переменную содержащую всю информацию о пользователе, иначе false
-    $result = $sth->fetch();
+        // Получаем информацию о пользователе, если номер телефона совпал.
+        $result = $sth->fetch();
 
-    // Использую строгое равенство, т.к null может быть приведен из других типов
-    if ($result === null) {
-        // Выбрасываем ошибку в класс Error если есть.
-        throw new \Error('Error check user phone');
+    // Ловим исключения и обрабатываем их в специальной функции.
+    } catch (\Exception $e) {
+        // Записываем исключения в файл и выводим ошибку на экран.
+        writeExceptionFile($e);
     }
-    // Возвращаем true, если пользователь с таким номером существует.
-    return (bool) $result;
+
+    // Возвращаем true, если пользователь с таким номером телефона существует, иначе false.
+    return (bool) $result ?? false;
 }
 
 /**
@@ -237,32 +263,44 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
  */
 function updateUser(\PDO $connection, array $data, int $userId): array
 {
-    // Запрос обновляющий информацию о пользователе по айди.
-    $query = 'UPDATE users SET name = :name, email = :email, phone_number = :phone_number, password = :password WHERE id = :id';
+    // Обработчик системных ошибок.
+    try {
+        // Запрос для обновления данных пользователя.
+        $query = 'UPDATE users SET name = :name, email = :email, phone_number = :phone_number, password = :password WHERE id = :id';
 
-    // Подготовка запроса.
-    $sth = $connection->prepare($query);
+        // Подготавливаем запрос к выполнению.
+        $sth = $connection->prepare($query);
 
-    /* Решил оставить bindParam, т.к он обеспечивает защиту от SQL-инъекций
-    и явно указывает тип принимаемых значений.
-    */
+        // Экранируем вводимые данные пользователя.
+        $validateData['name'] = $connection->quote($data['name']);
+        $validateData['email'] = $connection->quote($data['email']);
+        $validateData['phone_number'] = $connection->quote($data['phone_number']);
+        $validateData['password'] = $connection->quote($data['password']);
 
-    $sth->bindParam(':name', $data['name'], PDO::PARAM_STR);
-    $sth->bindParam(':email', $data['email'], PDO::PARAM_STR);
-    $sth->bindParam(':phone_number', $data['phone'], PDO::PARAM_STR);
-    $sth->bindParam(':password', $data['password'], PDO::PARAM_STR);
-    $sth->bindParam(':id', $userId, PDO::PARAM_INT);
+        // Передаем измененные данные пользователя для именованных параметров.
+        // И запускаем подготовленный запрос на выполнение.
+        $sth->execute([
+            ':name' => $validateData['name'],
+            ':email' => $validateData['email'],
+            ':phone_number' => $validateData['phone_number'],
+            ':password' => $validateData['password'],
+            ':id' => $userId
+        ]);
 
-    // Выполняем запрос.
-    $sth->execute();
+        // Обработка пользовательских ошибок.
+        if (!$data) {
+            // Выбрасываем ошибку в класс Error, если введены не все данные.
+            throw new \Error('Error update user data');
+        }
 
-    if (!$data) {
-        // Выбрасываем ошибку в класс Error если есть.
-        throw new \Error('Error update user data');
+    // Ловим исключения и обрабатываем их в специальной функции.
+    } catch (\Exception $e) {
+        // Записываем исключения в файл и выводим ошибку на экран.
+        writeExceptionFile($e);
     }
-    // Возвращаем массив измененных данных
-    // Т.к валидации нет, то беру $data напрямую.
-    return (array) $data;
+
+    // Возвращаем массив измененных данных пользователя.
+    return (array) $validateData;
 }
 
 /**
@@ -326,8 +364,8 @@ try {
         $saveUser = saveUser($connectionDB, $data);
     } elseif ($action === 'check') {
         // Проверяем наличие вводимых данных в БД.
-        $email = 'test@gmail.com';
-        $phone = '79073547211';
+        $email = 'tezst@gmail.com';
+        $phone = '789154123w1';
         $checkUserEmail = checkUserEmail($connectionDB, $email);
         $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $phone);
         if (!($checkUserPhoneNumber || $checkUserEmail)) {
