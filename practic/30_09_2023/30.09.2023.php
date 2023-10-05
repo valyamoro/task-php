@@ -53,7 +53,7 @@ function connectionDB(): ?\PDO
     // Ловим исключения.
     } catch (\PDOException $e) {
         // Прерываем выполнение скрипта и выводим ошибку на экран.
-        die ('Connection error: ' . $e->getMessage());
+        \die ('Connection error: ' . $e->getMessage());
     }
 
     // Возвращаем объект PDO с настройками.
@@ -67,9 +67,9 @@ function connectionDB(): ?\PDO
 #[NoReturn] function writeExceptionFile(object $message): void
 {
     // Записываем системную ошибку в файл.
-    file_put_contents('system_error.log', $message . PHP_EOL, FILE_APPEND);
+    \file_put_contents('system_error.log', $message . PHP_EOL, FILE_APPEND);
     // Завершаем выполнение скрипта и выводим ошибку на экран.
-    die ($message->getMessage());
+    \die ($message->getMessage());
 }
 
 /**
@@ -361,7 +361,7 @@ $connectionDB = connectionDB();
 // Модель исключений "вылавливающая возможные ошибки"
 try {
     // Определяем метод взаимодействия с данными пользователя.
-    $action = 'save';
+    $action = 'getUsers';
 
     // Определяем айди пользователя.
     $id = 31;
@@ -374,7 +374,7 @@ try {
             'name' => 'test5',
             'email' => 'test3@gmail.com',
             'phone_number' => '7891541231',
-            'password' => password_hash('fada', PASSWORD_DEFAULT),
+            'password' => \password_hash('fada', PASSWORD_DEFAULT),
         ];
         $updateUser = updateUser($connectionDB, $data, $id);
     } elseif ($action === 'save') {
@@ -383,7 +383,7 @@ try {
             'name' => 'test3a',
             'email' => 'teasst3@gmail.com',
             'phone_number' => '1321asd32312',
-            'password' => password_hash('1234asd124', PASSWORD_DEFAULT),
+            'password' => \password_hash('1234asd124', PASSWORD_DEFAULT),
             'is_active' => '1'
         ];
         $saveUser = saveUser($connectionDB, $data);
@@ -414,12 +414,12 @@ try {
 }
 catch (\Error $e) {
     // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
-    file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
+    \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
     // Заваршаем выполнения скрипта и отправляем ошибку
-    die ($e->getMessage());
+    \die ($e->getMessage());
 } finally  {
     // В любом другом случаи записываем в файл определенную информацию.
-    file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
+    \file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
 }
 
 // ----------------------------------
