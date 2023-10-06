@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 error_reporting(-1);
 
@@ -41,7 +42,6 @@ function connectionDB(): ?\PDO
             // Опции объекта.
             [
                 // Устанавливаем атрибуты:
-
                 // Режим сообщения об ошибках. Выбрасывает PDOException.
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 
@@ -49,13 +49,13 @@ function connectionDB(): ?\PDO
                 \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
 
                 // При подключении автоматически выполняем команду установки кодировки.
-                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4',
             ]
         );
     // Ловим исключения.
     } catch (\PDOException $e) {
         // Прерываем выполнение скрипта и выводим ошибку на экран.
-        \die ('Connection error: ' . $e->getMessage());
+        die ('Connection error: ' . $e->getMessage());
     }
 
     // Возвращаем объект PDO с настройками.
@@ -74,6 +74,34 @@ function connectionDB(): ?\PDO
     \die ($message->getMessage());
 }
 
+/**
+ * Функция для экранирования элементов массива.
+ * @param array $data
+ * @return array
+ */
+function validateData(array &$data): array
+{
+    $validateData = [];
+
+    foreach ($data as &$element) {
+        $validateElement = connectionDB()->quote(\htmlspecialchars(\strip_tags(\trim($element))));
+        $validateData[] = $validateElement;
+    }
+
+    return (array) $validateData;
+}
+
+//$data = [
+//    'name' => 'Alice',
+//    'email' => 'kutlumbek@gmail.com<h1>je</h1>',
+//    'phone_number' => '79227385214',
+//    'password' => password_hash('1234', PASSWORD_DEFAULT),
+//    'is_active' => '1',
+//];
+//$connectionDB = connectionDB(); // Предположим, что у вас есть функция connectionDB() для создания соединения с базой данных.
+//$valData = validateData($connectionDB, $data);
+//dump($valData);
+//die;
 /**
  * Получаем массив с данными пользователей.
  * @param PDO $connection
@@ -169,20 +197,16 @@ function saveUser(\PDO $connection, array $data): int
         $sth = $connection->prepare($query);
 
         // Экранируем вводимые данные пользователя.
-        $validateData['name'] = $connection->quote($data['name']);
-        $validateData['email'] = $connection->quote($data['email']);
-        $validateData['phone_number'] = $connection->quote($data['phone_number']);
-        $validateData['password'] = $connection->quote($data['password']);
-        $validateData['is_active'] = $connection->quote($data['is_active']);
+        $validateData = validateData($data);
 
         // Передаем данные пользователя для именованных параметров.
         // И запускаем подготовленный запрос на выполнение.
         $sth->execute([
-            ':name' => $validateData['name'],
-            ':email' => $validateData['email'],
-            ':phone_number' => $validateData['phone_number'],
-            ':password' => $validateData['password'],
-            ':is_active' => $validateData['is_active']
+            ':name' => $validateData[0],
+            ':email' => $validateData[1],
+            ':phone_number' => $validateData[2],
+            ':password' => $validateData[3],
+            ':is_active' => $validateData[4],
         ]);
 
         // Получаем ID последней вставленной строки.
@@ -287,20 +311,17 @@ function updateUser(\PDO $connection, array $data, int $userId): array
         $sth = $connection->prepare($query);
 
         // Экранируем вводимые данные пользователя.
-        $validateData['name'] = $connection->quote($data['name']);
-        $validateData['email'] = $connection->quote($data['email']);
-        $validateData['phone_number'] = $connection->quote($data['phone_number']);
-        $validateData['password'] = $connection->quote($data['password']);
+        $validateData = validateData($data);
 
         // Передаем измененные данные пользователя для именованных параметров.
         // И запускаем подготовленный запрос на выполнение.
         $sth->execute([
-            ':name' => $validateData['name'],
-            ':email' => $validateData['email'],
-            ':phone_number' => $validateData['phone_number'],
-            ':password' => $validateData['password'],
+            ':name' => $validateData[0],
+            ':email' => $validateData[1],
+            ':phone_number' => $validateData[2],
+            ':password' => $validateData[3],
             // Айди не проходит экранирование, т.к он будет получен с сессии, либо введен админом *
-            ':id' => $userId
+            ':id' => $userId,
         ]);
 
         // Получаем количество затронутых строк.
@@ -376,17 +397,17 @@ try {
     } elseif ($action === 'update') {
         // Обновляем пользователя.
         $data = [
-            'name' => 'test5',
-            'email' => 'test3@gmail.com',
-            'phone_number' => '7891541231',
+            'name' => 'tvxcvas',
+            'email' => 'tasdads3@gmail.com',
+            'phone_number' => '7591541231',
             'password' => \password_hash('fada', PASSWORD_DEFAULT),
         ];
         $updateUser = updateUser($connectionDB, $data, $id);
     } elseif ($action === 'save') {
         // Добавляем пользователя.
         $data = [
-            'name' => 'test3a',
-            'email' => 'teasst3@gmail.com',
+            'name' => 'lmnk',
+            'email' => 'lmnk@gmail.com',
             'phone_number' => '1321asd32312',
             'password' => \password_hash('1234asd124', PASSWORD_DEFAULT),
             'is_active' => '1'
