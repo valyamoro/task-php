@@ -20,6 +20,7 @@ const DB_NAME = 'mvc-int-shop';
 const DB_CHARSET = 'utf8mb4';
 const DB_USER = 'root';
 const DB_PASSWORD = '';
+
 /**
  * Подключемся к БД через глобальный класс PDO
  * @return PDO|null
@@ -65,17 +66,30 @@ function connectionDB(): ?\PDO
 }
 
 /**
- * Функция записи системных ошибок в файл
- * @param object $message
+ * Функция записи ошибок в файл
+ * @param string $message
+ * @return void
  */
-// Стоит разделить на 2 функции, одна записывает ошибку в файл, другая завершает скрипт. *
-#[NoReturn] function writeExceptionFile(object $message): void
+function writeError(string $message): void
 {
-    $systemErrorFile = 'system_error.log';
-    // Записываем системную ошибку в файл.
-    \file_put_contents($systemErrorFile, $message . PHP_EOL, FILE_APPEND);
-    // Завершаем выполнение скрипта и выводим ошибку на экран.
-    \die ($message->getMessage());
+    // Записываем в переменную путь до файла с ошибками.
+    $errorLog = 'errors.log';
+    // Записываем ошибку в файл.
+    \file_put_contents($errorLog, $message . PHP_EOL, FILE_APPEND);
+}
+
+/**
+ * Функция обработки ошибок.
+ * @param mixed $result
+ * @param string $message
+ * @return void
+ */
+function throwError(mixed $result, string $message): void
+{
+    if (empty($result)) {
+        writeError($message);
+        throw new \Error($message);
+    }
 }
 
 /**
@@ -103,31 +117,20 @@ function validateData(array &$data): array
  */
 function getUsers(\PDO $connection, string $order): array
 {
-    // Обработчик системных ошибок.
-    try {
-        // Запрос на получение данных всех пользователей.
-        $query = "SELECT * FROM users ORDER BY {$order} DESC";
+    // Запрос на получение данных всех пользователей.
+    $query = "SELECTц * FROM users ORDER BY ? DESC";
 
-        // Подготавливаем запрос к выполнению.
-        $sth = $connection->prepare($query);
+    // Подготавливаем запрос к выполнению.
+    $sth = $connection->prepare($query);
 
-        // Запускаем подготовленный запрос на выполнение.
-        $sth->execute();
+    // Запускаем подготовленный запрос на выполнение.
+    $sth->execute([$order]);
 
-        // Загружаем в переменную оставшиеся строки из набора результатов.
-        $result = $sth->fetchAll();
+    // Получаем оставшиеся строки из набора результатов.
+    $result = $sth->fetchAll();
 
-        // Обработчик пользовательских ошибок.
-        if (!$result) {
-            // Выбрасываем ошибку в конструктор объекта класса и завершаем выполнение скрипта.
-            throw new \Error('Users not found');
-        }
-
-    // Ловим исключения и обрабатываем их в специальной функции.
-    } catch (\Exception $e) {
-        // Записываем исключения в файл и выводим ошибку на экран.
-        writeExceptionFile($e);
-    }
+    // Если есть ошибка, обрабатываем ее и завершаем скрипт.
+    throwError($result, 'Users not found');
 
     // Возвращаем ассоциативный массив данных всех пользователей.
     // Ключи берем из имени столбцов.
@@ -434,7 +437,7 @@ try {
     }
 // Блок определяющий как реагировать на выброшенное исключение.
 }
-catch (\Error $e) {
+catch (\PDOException $e) {
     // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
     \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
     // Заваршаем выполнения скрипта и отправляем ошибку
