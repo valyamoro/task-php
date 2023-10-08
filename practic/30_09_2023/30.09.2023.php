@@ -1,5 +1,11 @@
 <?php
-
+/*
+ * Применить транзакции, там где нужно.
+ * Использовать лимиты везде где только можно.
+ * Вынести интерфейс бекенда наверх.
+ * Создать отдельные функции для каждой валидации и затем вызвать их внутри другой функции.
+ *
+ */
 declare(strict_types=1);
 error_reporting(-1);
 
@@ -64,6 +70,76 @@ function connectionDB(): ?\PDO
     return $dbh;
 }
 
+$connectionDB = connectionDB();
+
+// Модель исключений
+try {
+    // Определяем метод взаимодействия с данными пользователя.
+    $action = 'check';
+
+    // Определяем айди пользователя.
+    $id = 49;
+    if ($action === 'delete') {
+        // Удаляем пользователя.
+        $deleteUser = deleteUser($connectionDB, $id);
+    } elseif ($action === 'update') {
+        // Обновляем пользователя.
+        $data = [
+            'name' => 'aszxcd',
+            'email' => 'tasdads3@gmail.com',
+            'phone_number' => '7591541231',
+            'password' => \password_hash('fada', PASSWORD_DEFAULT),
+        ];
+        quoteData($data);
+        $updateUser = updateUser($connectionDB, $data, $id);
+    } elseif ($action === 'save') {
+        // Добавляем пользователя.
+        $data = [
+            'name' => 'zxcclmnk',
+            'email' => 'lmnk@gmail.com',
+            'phone_number' => '1321asd32312',
+            'password' => \password_hash('1234asd124', PASSWORD_DEFAULT),
+            'is_active' => '1'
+        ];
+        quoteData($data);
+        $saveUser = saveUser($connectionDB, $data);
+    } elseif ($action === 'check') {
+        // Проверяем наличие вводимых данных в БД.
+        $email = 'tasdads3@gmail.com';
+        $phone = '7051241w2432';
+        $userData = quoteData(['email' => $email, 'phone_number' => $phone]);
+
+        $checkUserEmail = checkUserEmail($connectionDB, $userData['email']);
+        $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $userData['phone_number']);
+
+        if (!($checkUserPhoneNumber || $checkUserEmail)) {
+            echo 'Пользователя с такими данными нет';
+        } else {
+            echo 'Пользователь с этими данными существует';
+        }
+    } elseif ($action === 'getUsers') {
+        // Получаем всех пользователей в виде ассоциативного массива.
+
+        // Название таблицы
+        $table = 'name';
+        $getUsers = getUsers($connectionDB, $table);
+        dump($getUsers);
+    } elseif ($action === 'getUser') {
+        // Получаем данные пользователя через его айди.
+        $getUser = getUser($connectionDB, $id);
+        dump($getUser);
+    }
+// Блок определяющий как реагировать на выброшенное исключение.
+}  catch (\PDOException $e) {
+    // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
+    \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
+    // Заваршаем выполнения скрипта и отправляем ошибку
+    die ($e->getMessage());
+} finally  {
+    // В любом другом случаи записываем в файл определенную информацию.
+    \file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
+}
+
 /**
  * Функция записи ошибок в файл
  * @param string $message
@@ -95,27 +171,19 @@ function throwError(mixed $result, string $message): void
 }
 
 /**
- * Функция для валидации данных.
+ * Тут будут только ЭКРАНИРОВАТЬСЯ ДАННЫЕ. Валидация будет в другом месте.
  * @param mixed $data
- * @return mixed
+ * @return array
  */
-function validateData(mixed &$data): mixed
+function quoteData(array $data): array
 {
-    // Если приходит массив.
-    if (\is_array($data)) {
-        // Перебираем пришедший массив.
-        foreach ($data as $key => $value) {
-            // Экранируем каждый элемент массива.
-            $data[$key] = connectionDB()->quote(\htmlspecialchars(\strip_tags(\trim($value))));
-        }
-    // Если приходит не массив.
-    } else {
-        // Экранируем пришедшую строку.
-        $data = connectionDB()->quote(\htmlspecialchars(\strip_tags(\trim($data))));
+    // Перебираем массив с приходящими данными.
+    foreach ($data as $key => $value) {
+        // Экранируем каждый элемент массива.
+        $quoteData[$key] = connectionDB()->quote(($value));
     }
-
     // Возвращаем экранированные данные.
-    return $data;
+    return $quoteData;
 }
 
 /**
@@ -310,93 +378,3 @@ function updateUser(\PDO $connection, array $data, int $userId): array
     // Возвращаем массив измененных данных пользователя.
     return (array) $data;
 }
-
-
-$connectionDB = connectionDB();
-
-// Модель исключений
-try {
-    // Определяем метод взаимодействия с данными пользователя.
-    $action = 'getUsers';
-
-    // Определяем айди пользователя.
-    $id = 49;
-    if ($action === 'delete') {
-        // Удаляем пользователя.
-        $deleteUser = deleteUser($connectionDB, $id);
-    } elseif ($action === 'update') {
-        // Обновляем пользователя.
-        $data = [
-            'name' => 'aszxcd',
-            'email' => 'tasdads3@gmail.com',
-            'phone_number' => '7591541231',
-            'password' => \password_hash('fada', PASSWORD_DEFAULT),
-        ];
-        validateData($data);
-        $updateUser = updateUser($connectionDB, $data, $id);
-    } elseif ($action === 'save') {
-        // Добавляем пользователя.
-        $data = [
-            'name' => 'zxcclmnk',
-            'email' => 'lmnk@gmail.com',
-            'phone_number' => '1321asd32312',
-            'password' => \password_hash('1234asd124', PASSWORD_DEFAULT),
-            'is_active' => '1'
-        ];
-        validateData($data);
-        $saveUser = saveUser($connectionDB, $data);
-    } elseif ($action === 'check') {
-        // Проверяем наличие вводимых данных в БД.
-        $email = 'tezst@gmail.com';
-        $phone = '7051241w2432';
-        validateData($email);
-        validateData($phone);
-        $checkUserEmail = checkUserEmail($connectionDB, $email);
-        $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $phone);
-        if (!($checkUserPhoneNumber || $checkUserEmail)) {
-            echo 'Пользователя с такими данными нет!';
-        } else {
-            echo 'Пользователь с этими данными существует';
-        }
-    } elseif ($action === 'getUsers') {
-        // Получаем всех пользователей в виде ассоциативного массива.
-
-        // Название таблицы
-        $table = 'name';
-        validateData($table);
-        $getUsers = getUsers($connectionDB, $table);
-        dump($getUsers);
-    } elseif ($action === 'getUser') {
-        // Получаем данные пользователя через его айди.
-        $getUser = getUser($connectionDB, $id);
-        dump($getUser);
-    }
-// Блок определяющий как реагировать на выброшенное исключение.
-}  catch (\PDOException $e) {
-    // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
-    \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
-    // Заваршаем выполнения скрипта и отправляем ошибку
-    die ($e->getMessage());
-} finally  {
-    // В любом другом случаи записываем в файл определенную информацию.
-    \file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
-}
-
-// ----------------------------------
-
-//class MyPDO extends PDO
-//{
-//    public function __construct($file = 'my_setting.ini')
-//    {
-//        if (!$settings = parse_ini_file($file, true)) {
-//            throw new exception('Unable to open ' . $file . '.');
-//        }
-//
-//        $dns = $settings['database']['driver'] .
-//            ':host=' . $settings['database']['host'] .
-//            ((!empty($settings['database']['port'])) ? (';port=' . $settings['database']['port']) : '') .
-//            ';dbname=' . $settings['database']['schema'];
-//
-//        parent::__construct($dns, $settings['database']['username'], $settings['database']['password']);
-//    }
-//}
