@@ -146,7 +146,6 @@ function getUsers(\PDO $connection, string $order): array
     return (array) $result;
 }
 
-
 /**
  * Получаем массив с данными пользователя.
  * @param PDO $connection
@@ -155,7 +154,6 @@ function getUsers(\PDO $connection, string $order): array
  */
 function getUser(\PDO $connection, int $id): array
 {
-
     // Запрос на получение данных одного пользователя по айди.
     $query = 'SELECT * FROM users WHERE id=? LIMIT 1';
 
@@ -210,7 +208,6 @@ function saveUser(\PDO $connection, array $data): int
     return (int) $result;
 }
 
-
 /**
  * Проверка на наличие пользователя в БД по почте.
  * @param PDO $connection
@@ -260,8 +257,6 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
     // Возвращаем true, если пользователь с таким номером телефона существует, иначе false.
     return (bool) $result;
 }
-
-
 
 /**
  * Удаляем пользователя с его данными.
