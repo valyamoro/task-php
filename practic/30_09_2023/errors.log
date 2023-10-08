@@ -111,3 +111,54 @@ Users not found
 Users not found
 Users not found
 SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECTц * FROM users ORDER BY 'name' DESC' at line 1
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Exception: Users not found in C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php on line 98
+Users not found
+Exception: Users not found in C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php on line 98
+Users not found
+Exception: Users not found in C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php on line 98
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+Users not found
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECTs * FROM users ORDER BY 'name' DESC' at line 1
+User not found
+SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'name' cannot be null
+User not saved
+SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens
+SQLSTATE[HY093]: Invalid parameter number: number of bound variables does not match number of tokens
+User not saved
+asddas
+asddas
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECTw * FROM users WHERE email='\'tezst@gmail.com\'' LIMIT 1' at line 1
+User not found
+User not found
+User not found
+User not found
