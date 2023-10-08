@@ -100,3 +100,7 @@ Error delete user
 Error delete user
 Error delete user
 PDO::quote(): Argument #1 ($string) must be of type string, null given
+getUsers(): Argument #1 ($connection) must be of type PDO, null given, called in C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php on line 430
+getUsers(): Argument #1 ($connection) must be of type PDO, null given, called in C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php on line 430
+getUsers(): Argument #1 ($connection) must be of type PDO, null given, called in C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php on line 430
+getUsers(): Argument #1 ($connection) must be of type PDO, null given, called in C:\OSPanel\domains\tasks.my\practic\30_09_2023\30.09.2023.php on line 435

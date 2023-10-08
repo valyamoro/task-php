@@ -15,6 +15,11 @@ function dump(mixed $data): void
     echo '<pre>'; \print_r($data); echo '</pre>';
 }
 
+const DB_HOST = 'localhost';
+const DB_NAME = 'mvc-int-shop';
+const DB_CHARSET = 'utf8mb4';
+const DB_USER = 'root';
+const DB_PASSWORD = '';
 /**
  * Подключемся к БД через глобальный класс PDO
  * @return PDO|null
@@ -24,37 +29,31 @@ function connectionDB(): ?\PDO
     // При последующих вызовах этой функции переменная не будет пересоздаваться.
     static $dbh = null;
 
-    // Если функцию уже вызывали, то возвращаем текущее значение.
+    // Предотвращаем пересоздание объекта PDO.
     if (!\is_null($dbh)) {
         return $dbh;
     }
 
-    // Конструкция для обработки исключений..
+    // Конструкция для обработки исключений.
     try {
-        // Создаем объект, и задаем настройки для подключения к БД.
-        $dbh = new \PDO(
-            // Строка с источником данных.
-            'mysql:host=localhost;dbname=mvc-int-shop;charset=utf8mb4',
-            // Имя хоста.
-            'root',
-            // Пароль для подключения.
-            '',
-            // Опции объекта.
-            [
-                // Устанавливаем атрибуты:
-                // Режим сообщения об ошибках. Выбрасывает PDOException.
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+        // Задаем настройки для подключения к БД.
+        $options = [
+            // Режим сообщения об ошибках. Выбрасывает PDOException.
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 
-                // Режим выборки. Возвращает массив индексированный именами столбцов результирующего набора.
-                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            // Режим выборки. Возвращает массив индексированный именами столбцов результирующего набора.
+            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
 
+            // При подключении автоматически выполняем команду установки кодировки.
+            \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . DB_CHARSET,
+        ];
 
-                \PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY,
+        // Определяем параметры для строки источника данных.
+        $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
 
-                // При подключении автоматически выполняем команду установки кодировки.
-                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4',
-            ],
-        );
+        // Создаем объект для подключения к БД с настройками.
+        $dbh = new PDO($dsn, DB_USER, DB_PASSWORD, $options);
+
     // Ловим исключения.
     } catch (\PDOException $e) {
         // Прерываем выполнение скрипта и выводим ошибку на экран.
@@ -439,7 +438,7 @@ catch (\Error $e) {
     // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
     \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
     // Заваршаем выполнения скрипта и отправляем ошибку
-    \die ($e->getMessage());
+    die ($e->getMessage());
 } finally  {
     // В любом другом случаи записываем в файл определенную информацию.
     \file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
