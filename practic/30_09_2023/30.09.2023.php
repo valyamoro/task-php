@@ -80,15 +80,15 @@ function writeError(string $message): void
 
 /**
  * Функция обработки ошибок.
- * @param mixed $result
+ * @param array $result
  * @param string $message
  * @return void
  */
-function throwError(mixed $result, string $message): void
+function throwError(array $result, string $message): void
 {
     if (empty($result)) {
         writeError($message);
-        throw new \Error($message);
+        die("Error: {$message}");
     }
 }
 
@@ -118,7 +118,7 @@ function validateData(array &$data): array
 function getUsers(\PDO $connection, string $order): array
 {
     // Запрос на получение данных всех пользователей.
-    $query = "SELECTц * FROM users ORDER BY ? DESC";
+    $query = "SELECT * FROM users ORDER BY ? DESC";
 
     // Подготавливаем запрос к выполнению.
     $sth = $connection->prepare($query);
@@ -436,8 +436,7 @@ try {
         dump($getUser);
     }
 // Блок определяющий как реагировать на выброшенное исключение.
-}
-catch (\PDOException $e) {
+}  catch (\PDOException $e) {
     // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
     \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
     // Заваршаем выполнения скрипта и отправляем ошибку
