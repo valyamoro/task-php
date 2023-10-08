@@ -127,7 +127,7 @@ function validateData(mixed &$data): mixed
 function getUsers(\PDO $connection, string $order): array
 {
     // Запрос на получение данных всех пользователей.
-    $query = "SELECT * FROM users ORDER BY ? DESC";
+    $query = 'SELECT * FROM users ORDER BY ? DESC';
 
     // Подготавливаем запрос к выполнению.
     $sth = $connection->prepare($query);
