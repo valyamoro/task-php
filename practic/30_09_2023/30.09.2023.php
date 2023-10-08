@@ -3,8 +3,6 @@
 declare(strict_types=1);
 error_reporting(-1);
 
-use JetBrains\PhpStorm\NoReturn;
-
 /**
  * Выводим удобочитаемую информацию о переменной.
  * @param mixed $data
@@ -15,6 +13,7 @@ function dump(mixed $data): void
     echo '<pre>'; \print_r($data); echo '</pre>';
 }
 
+// Указываем параметры для подключения к БД.
 const DB_HOST = 'localhost';
 const DB_NAME = 'mvc-int-shop';
 const DB_CHARSET = 'utf8mb4';
@@ -86,23 +85,36 @@ function writeError(string $message): void
  */
 function throwError(mixed $result, string $message): void
 {
+    // Если результат функции возвращает неожиданный результат.
     if (empty($result)) {
+        // Функция записи ошибки в файл.
         writeError($message);
+        // Завершаем скрипт и выводим ошибку на экран.
         die("Error: {$message}");
     }
 }
 
-function validateData(mixed &$data)
+/**
+ * Функция для валидации данных.
+ * @param mixed $data
+ * @return mixed
+ */
+function validateData(mixed &$data): mixed
 {
+    // Если приходит массив.
     if (\is_array($data)) {
-        foreach ($data as &$element) {
-            $element = connectionDB()->quote(\htmlspecialchars(\strip_tags(\trim($element))));
-            $data[] = $element;
+        // Перебираем пришедший массив.
+        foreach ($data as $key => $value) {
+            // Экранируем каждый элемент массива.
+            $data[$key] = connectionDB()->quote(\htmlspecialchars(\strip_tags(\trim($value))));
         }
+    // Если приходит не массив.
     } else {
+        // Экранируем пришедшую строку.
         $data = connectionDB()->quote(\htmlspecialchars(\strip_tags(\trim($data))));
     }
 
+    // Возвращаем экранированные данные.
     return $data;
 }
 
@@ -138,13 +150,13 @@ function getUsers(\PDO $connection, string $order): array
 /**
  * Получаем массив с данными пользователя.
  * @param PDO $connection
- * @param string $id
+ * @param int $id
  * @return array
  */
-function getUser(\PDO $connection, string $id): array
+function getUser(\PDO $connection, int $id): array
 {
 
-// Запрос на получение данных одного пользователя по айди.
+    // Запрос на получение данных одного пользователя по айди.
     $query = 'SELECT * FROM users WHERE id=? LIMIT 1';
 
     // Подготавливаем запрос к выполнению.
@@ -181,17 +193,14 @@ function saveUser(\PDO $connection, array $data): int
     // Подготавливаем запрос к выполнению.
     $sth = $connection->prepare($query);
 
-    // Экранируем вводимые данные пользователя.
-    $validateData = validateData($data);
-
     // Передаем данные пользователя для именованных параметров.
     // И запускаем подготовленный запрос на выполнение.
     $sth->execute([
-        ':name' => $validateData[0],
-        ':email' => $validateData[1],
-        ':phone_number' => $validateData[2],
-        ':password' => $validateData[3],
-        ':is_active' => $validateData[4],
+        ':name' => $data['name'],
+        ':email' => $data['email'],
+        ':phone_number' => $data['phone_number'],
+        ':password' => $data['password'],
+        ':is_active' => $data['is_active'],
     ]);
 
     // Получаем ID последней вставленной строки.
@@ -216,12 +225,9 @@ function checkUserEmail(\PDO $connection, string $email): bool
     // Подготавливаем запрос к выполнению.
     $sth = $connection->prepare($query);
 
-    // Экранируем почту.
-    $validateEmail = $connection->quote($email);
-
     // Передаем почту для позиционного параметра.
     // И запускаем подготовленный запрос на выполнение.
-    $sth->execute([$validateEmail]);
+    $sth->execute([$email]);
 
     // Получаем информацию о пользователе, если почта совпала.
     $result = $sth->fetch();
@@ -244,17 +250,38 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
     // Подготавливаем запрос к выполнению.
     $sth = $connection->prepare($query);
 
-    // Экранируем номер телефона.
-    $validatePhoneNumber = $connection->quote($phoneNumber);
-
     // Передаем номер телефона для позиционного параметра.
     // И запускаем подготовленный запрос на выполнение.
-    $sth->execute([$validatePhoneNumber]);
+    $sth->execute([$phoneNumber]);
 
     // Получаем информацию о пользователе, если номер телефона совпал.
     $result = $sth->fetch();
 
     // Возвращаем true, если пользователь с таким номером телефона существует, иначе false.
+    return (bool) $result;
+}
+
+
+
+/**
+ * Удаляем пользователя с его данными.
+ * @param PDO $connection
+ * @param int $userId
+ * @return bool
+ */
+function deleteUser(\PDO $connection, int $userId): bool
+{
+    // Запрос для удаления пользователя по айди.
+    $query = 'DELETE FROM users WHERE id=? LIMIT 1';
+
+    // Подготавливаем запрос к выполнению.
+    $sth = $connection->prepare($query);
+
+    // Передаем значение айди для позиционного параметра.
+    // И запускаем подготовленный запрос на выполнение.
+    $result = $sth->execute([$userId]);
+
+    // Возвращаем true, если пользователя удалили.
     return (bool) $result;
 }
 
@@ -274,106 +301,61 @@ function updateUser(\PDO $connection, array $data, int $userId): array
     // Подготавливаем запрос к выполнению.
     $sth = $connection->prepare($query);
 
-    // Экранируем вводимые данные пользователя.
-    // Проводить валидацию данных в другом месте.
-    // Т.е абсолютно все данные введенные пользователем должны проходить экранирование в одном месте
-    // остальные функции взаимодействующие с этими данными не должны заниматься этим. * * *
-    $validateData = validateData($data);
-
     // Передаем измененные данные пользователя для именованных параметров.
     // И запускаем подготовленный запрос на выполнение.
     $sth->execute([
-        ':name' => $validateData[0],
-        ':email' => $validateData[1],
-        ':phone_number' => $validateData[2],
-        ':password' => $validateData[3],
+        ':name' => $data['name'],
+        ':email' => $data['email'],
+        ':phone_number' => $data['phone_number'],
+        ':password' => $data['password'],
         // Айди не проходит экранирование, т.к он будет получен с сессии, либо введен админом *
         ':id' => $userId,
     ]);
 
     // Возвращаем массив измененных данных пользователя.
-    return (array) $validateData;
+    return (array) $data;
 }
-
-/**
- * Удаляем пользователя с его данными.
- * @param PDO $connection
- * @param int $userId
- * @return bool
- */
-function deleteUser(\PDO $connection, int $userId): bool
-{
-    // Обработчик системных ошибок.
-    try {
-        // Запрос для удаления пользователя по айди.
-        $query = 'DELETE FROM users WHERE id=? LIMIT 1';
-
-        // Подготавливаем запрос к выполнению.
-        $sth = $connection->prepare($query);
-
-        // Передаем позиционный параметр айди.
-        // И запускаем подготовленный запрос на выполнение.
-        // Может лучше использовать exec чтобы вернуть кол-во строк?
-        $result = $sth->execute([$userId]);
-
-        // Получаем количество удаленых строк.
-        $rowCount = $sth->rowCount();
-
-        // Обработчик пользовательских ошибок.
-        if (!$rowCount) {
-            // Выбрасываем ошибку в класс Error, если кол-во затронутых строк равно нулю.
-            throw new \Error('Error delete user');
-        }
-
-    // Ловим исключения и обрабатываем их в специальной функции.
-    } catch (\Exception $e) {
-        // Записываем исключения в файл и выводим ошибку на экран.
-        writeExceptionFile($e);
-    }
-
-    // Возвращаем true, если пользователя удалили.
-    return (bool) $result;
-}
-
 
 
 $connectionDB = connectionDB();
-// Создать функцию для автоматического тестирования этого "интерфейса" *
-// В action и айди будут автоматически передаваться нужные названия функций и через БД будет проходить 10% БД *
 
-// Модель исключений "вылавливающая возможные ошибки"
+// Модель исключений
 try {
     // Определяем метод взаимодействия с данными пользователя.
     $action = 'getUsers';
 
     // Определяем айди пользователя.
-    $id = 142;
+    $id = 49;
     if ($action === 'delete') {
         // Удаляем пользователя.
         $deleteUser = deleteUser($connectionDB, $id);
     } elseif ($action === 'update') {
         // Обновляем пользователя.
         $data = [
-            'name' => 'tvxcvas',
+            'name' => 'aszxcd',
             'email' => 'tasdads3@gmail.com',
             'phone_number' => '7591541231',
             'password' => \password_hash('fada', PASSWORD_DEFAULT),
         ];
+        validateData($data);
         $updateUser = updateUser($connectionDB, $data, $id);
     } elseif ($action === 'save') {
         // Добавляем пользователя.
         $data = [
-            'name' => 'lmnk',
+            'name' => 'zxcclmnk',
             'email' => 'lmnk@gmail.com',
             'phone_number' => '1321asd32312',
             'password' => \password_hash('1234asd124', PASSWORD_DEFAULT),
             'is_active' => '1'
         ];
+        validateData($data);
         $saveUser = saveUser($connectionDB, $data);
     } elseif ($action === 'check') {
         // Проверяем наличие вводимых данных в БД.
         $email = 'tezst@gmail.com';
         $phone = '7051241w2432';
+        validateData($email);
+        validateData($phone);
         $checkUserEmail = checkUserEmail($connectionDB, $email);
         $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $phone);
         if (!($checkUserPhoneNumber || $checkUserEmail)) {
@@ -386,6 +368,7 @@ try {
 
         // Название таблицы
         $table = 'name';
+        validateData($table);
         $getUsers = getUsers($connectionDB, $table);
         dump($getUsers);
     } elseif ($action === 'getUser') {
