@@ -29,7 +29,7 @@ function connectionDB(): ?\PDO
         return $dbh;
     }
 
-    // Модель исключений.
+    // Конструкция для обработки исключений..
     try {
         // Создаем объект, и задаем настройки для подключения к БД.
         $dbh = new \PDO(
@@ -48,9 +48,12 @@ function connectionDB(): ?\PDO
                 // Режим выборки. Возвращает массив индексированный именами столбцов результирующего набора.
                 \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
 
+
+                \PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY,
+
                 // При подключении автоматически выполняем команду установки кодировки.
                 \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4',
-            ]
+            ],
         );
     // Ловим исключения.
     } catch (\PDOException $e) {
@@ -66,10 +69,12 @@ function connectionDB(): ?\PDO
  * Функция записи системных ошибок в файл
  * @param object $message
  */
+// Стоит разделить на 2 функции, одна записывает ошибку в файл, другая завершает скрипт. *
 #[NoReturn] function writeExceptionFile(object $message): void
 {
+    $systemErrorFile = 'system_error.log';
     // Записываем системную ошибку в файл.
-    \file_put_contents('system_error.log', $message . PHP_EOL, FILE_APPEND);
+    \file_put_contents($systemErrorFile, $message . PHP_EOL, FILE_APPEND);
     // Завершаем выполнение скрипта и выводим ошибку на экран.
     \die ($message->getMessage());
 }
@@ -91,17 +96,6 @@ function validateData(array &$data): array
     return (array) $validateData;
 }
 
-//$data = [
-//    'name' => 'Alice',
-//    'email' => 'kutlumbek@gmail.com<h1>je</h1>',
-//    'phone_number' => '79227385214',
-//    'password' => password_hash('1234', PASSWORD_DEFAULT),
-//    'is_active' => '1',
-//];
-//$connectionDB = connectionDB(); // Предположим, что у вас есть функция connectionDB() для создания соединения с базой данных.
-//$valData = validateData($connectionDB, $data);
-//dump($valData);
-//die;
 /**
  * Получаем массив с данными пользователей.
  * @param PDO $connection
@@ -361,6 +355,7 @@ function deleteUser(\PDO $connection, int $userId): bool
 
         // Передаем позиционный параметр айди.
         // И запускаем подготовленный запрос на выполнение.
+        // Может лучше использовать exec чтобы вернуть кол-во строк?
         $result = $sth->execute([$userId]);
 
         // Получаем количество удаленых строк.
@@ -383,6 +378,8 @@ function deleteUser(\PDO $connection, int $userId): bool
 }
 
 $connectionDB = connectionDB();
+// Создать функцию для автоматического тестирования этого "интерфейса" *
+// В action и айди будут автоматически передаваться нужные названия функций и через БД будет проходить 10% БД *
 
 // Модель исключений "вылавливающая возможные ошибки"
 try {
