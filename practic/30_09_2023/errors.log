@@ -164,3 +164,5 @@ User not found
 User not found
 SQLSTATE[22007]: Invalid datetime format: 1292 Truncated incorrect DOUBLE value: ''48''
 SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'name' cannot be null
+SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'is_active' cannot be null
+SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'is_active' cannot be null

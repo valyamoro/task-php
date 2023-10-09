@@ -4,7 +4,9 @@
  * Использовать лимиты везде где только можно.
  * Вынести интерфейс бекенда наверх.
  * Создать отдельные функции для каждой валидации и затем вызвать их внутри другой функции.
- *
+ * Изменить валидацию номера телефона. Она работает неправильно.
+ * Изменить валидацию пароля, нельзя ограничивать символы.
+ * Нужно полностью обезопасить приложение.
  */
 declare(strict_types=1);
 error_reporting(-1);
@@ -75,7 +77,7 @@ $connectionDB = connectionDB();
 // Модель исключений
 try {
     // Определяем метод взаимодействия с данными пользователя.
-    $action = 'check';
+    $action = 'save';
 
     // Определяем айди пользователя.
     $id = 49;
@@ -95,13 +97,15 @@ try {
     } elseif ($action === 'save') {
         // Добавляем пользователя.
         $data = [
-            'name' => 'zxcclmnk',
-            'email' => 'lmnk@gmail.com',
-            'phone_number' => '1321asd32312',
-            'password' => \password_hash('1234asd124', PASSWORD_DEFAULT),
-            'is_active' => '1'
+            'name' => 'gkutlu1mbek',
+            'email' => 'lmn.com',
+            'phone_number' => 'as890935ads23212ddd',
+            'password' => '1xr#be%r123',
+            'is_active' => '1',
         ];
+        dump(validateData($data));
         quoteData($data);
+        die;
         $saveUser = saveUser($connectionDB, $data);
     } elseif ($action === 'check') {
         // Проверяем наличие вводимых данных в БД.
@@ -138,6 +142,93 @@ try {
 } finally  {
     // В любом другом случаи записываем в файл определенную информацию.
     \file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
+}
+
+function validateData($data)
+{
+    $msg[] = validateEmail($data['email']);
+    $msg[] = validatePhoneNumber($data['phone_number']);
+    $msg[] .= validatePassword($data['password']);
+    $msg[] .= validateUserName($data['name']);
+
+    return $msg;
+}
+function validatePhoneNumber($phoneNumber)
+{
+    $msg = '';
+
+    if (empty($phoneNumber)) {
+        $msg .= 'Заполните поле номер' . PHP_EOL;
+    } elseif (!preg_match('/((8|\+7)-?)?\(?\d{3,5}\)?-?\d{1}-?\d{1}-?\d{1}-?\d{1}-?\d{1}((-?\d{1})?-?\d{1})?/',
+        $phoneNumber)) {
+        $msg .= 'Некоректный номер' . $phoneNumber . PHP_EOL;
+    }
+
+    return $msg;
+}
+function validateEmail(string $email): string
+{
+    $msg = '';
+
+    if (empty($email)) {
+        $msg .= 'Заполните поле почты' . PHP_EOL;
+    } elseif (!preg_match("/[0-9a-z]+@[a-z]/", $email)) {
+        $msg .= 'Почта содержит недопустимые данные' . PHP_EOL;
+    }
+
+    return $msg;
+}
+
+function validatePassword(string $password): string
+{
+    $msg = '';
+
+    if (empty($password)) {
+        $msg .= 'Заполните поле пароль' . PHP_EOL;
+    } elseif (!preg_match('/^(?![0-9]+$).+/', $password)) {
+        $msg .= 'Пароль не должен содержать только цифры' . PHP_EOL;
+    } elseif (!preg_match('/^[^!№;]+$/u', $password)) {
+        $msg .= 'Пароль содержит недопустимые символы' . PHP_EOL;
+    } elseif (!preg_match('/^(?![A-Za-z]+$).+/', $password)) {
+        $msg .= 'Пароль не должен состоять только из букв' . PHP_EOL;
+    } elseif (!preg_match('/[A-Z]/', $password)) {
+        $msg .= 'Пароль должен содержать минимум одну заглавную букву' . PHP_EOL;
+    } elseif (mb_strlen($password, 'utf8') <= 5) {
+        $msg .= 'Пароль содержит меньше 5 символов' . PHP_EOL;
+    } elseif (mb_strlen($password, 'utf8') > 15) {
+        $msg .= 'Пароль больше 15 символов' . PHP_EOL;
+    }
+
+    return $msg;
+}
+
+function validateUserName(string $userName)
+{
+    $msg = '';
+
+    if (empty($userName)) {
+        $msg .= 'Заполните поле имя' . PHP_EOL;
+    } elseif (preg_match('#[^а-яa-z]#ui', $userName)) {
+        $msg .= 'Имя содержит недопустимые символы' . PHP_EOL;
+    } elseif (mb_strlen($userName, 'utf8') > 15) {
+        $msg .= 'Имя содержит больше 15 символов' . $userName . PHP_EOL;
+    } elseif (mb_strlen($userName, 'utf8') <= 3) {
+        $msg .= 'Имя содержит менее 4 символов'. $userName . PHP_EOL;
+    }
+
+    return $msg;
+}
+
+
+
+function editPhoneNumber(string $phoneNumber): string
+{
+    $editedPhoneNumber = str_replace(['+', '8'], '', $phoneNumber);
+    if (strlen($phoneNumber) === 10 && substr($phoneNumber, 0, 1) !== '7') {
+        $editedPhoneNumber = '7' . $phoneNumber;
+    }
+
+    return (string) $editedPhoneNumber;
 }
 
 /**
