@@ -1,5 +1,14 @@
 <?php
-
+/*
+ * Применить транзакции, там где нужно.
+ * Использовать лимиты везде где только можно.
+ * Вынести интерфейс бекенда наверх.
+ * Создать отдельные функции для каждой валидации и затем вызвать их внутри другой функции.
+ * Изменить валидацию номера телефона. Она работает неправильно.
+ * Изменить валидацию пароля, нельзя ограничивать символы.
+ * Нужно полностью обезопасить приложение.
+ * Применить кодировку через declare.
+ */
 declare(strict_types=1);
 error_reporting(-1);
 
@@ -64,58 +73,177 @@ function connectionDB(): ?\PDO
     return $dbh;
 }
 
-/**
- * Функция записи ошибок в файл
- * @param string $message
- * @return void
- */
-function writeError(string $message): void
-{
-    // Записываем в переменную путь до файла с ошибками.
-    $errorLog = 'errors.log';
-    // Записываем ошибку в файл.
-    \file_put_contents($errorLog, $message . PHP_EOL, FILE_APPEND);
-}
+$connectionDB = connectionDB();
 
-/**
- * Функция обработки ошибок.
- * @param array $result
- * @param string $message
- * @return void
- */
-function throwError(mixed $result, string $message): void
-{
-    // Если результат функции возвращает неожиданный результат.
-    if (empty($result)) {
-        // Функция записи ошибки в файл.
-        writeError($message);
-        // Завершаем скрипт и выводим ошибку на экран.
-        die("Error: {$message}");
-    }
-}
+// Модель исключений
+try {
+    // Определяем метод взаимодействия с данными пользователя.
+    $action = 'save';
 
-/**
- * Функция для валидации данных.
- * @param mixed $data
- * @return mixed
- */
-function validateData(mixed &$data): mixed
-{
-    // Если приходит массив.
-    if (\is_array($data)) {
-        // Перебираем пришедший массив.
-        foreach ($data as $key => $value) {
-            // Экранируем каждый элемент массива.
-            $data[$key] = connectionDB()->quote(\htmlspecialchars(\strip_tags(\trim($value))));
+    // Определяем айди пользователя.
+    $id = 49;
+    if ($action === 'delete') {
+        // Удаляем пользователя.
+        $deleteUser = deleteUser($connectionDB, $id);
+    } elseif ($action === 'update') {
+        // Обновляем пользователя.
+        $data = [
+            'name' => 'aszxcd',
+            'email' => 'tasdads3@gmail.com',
+            'phone_number' => '7591541231',
+            'password' => \password_hash('fada', PASSWORD_DEFAULT),
+        ];
+        quoteData($data);
+        $updateUser = updateUser($connectionDB, $data, $id);
+    } elseif ($action === 'save') {
+        // Добавляем пользователя.
+        $data = [
+            'name' => 'gkutlu1mbek',
+            'email' => 'lmn.com',
+            'phone_number' => 'as890935ads23212ddd',
+            'password' => '1xr#be%r123',
+            'is_active' => '1',
+        ];
+        dump(validateData($data));
+        quoteData($data);
+        die;
+        $saveUser = saveUser($connectionDB, $data);
+    } elseif ($action === 'check') {
+        // Проверяем наличие вводимых данных в БД.
+        $email = 'tasdads3@gmail.com';
+        $phone = '7051241w2432';
+        $userData = quoteData(['email' => $email, 'phone_number' => $phone]);
+
+        $checkUserEmail = checkUserEmail($connectionDB, $userData['email']);
+        $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $userData['phone_number']);
+
+        if (!($checkUserPhoneNumber || $checkUserEmail)) {
+            echo 'Пользователя с такими данными нет';
+        } else {
+            echo 'Пользователь с этими данными существует';
         }
-    // Если приходит не массив.
-    } else {
-        // Экранируем пришедшую строку.
-        $data = connectionDB()->quote(\htmlspecialchars(\strip_tags(\trim($data))));
+    } elseif ($action === 'getUsers') {
+        // Получаем всех пользователей в виде ассоциативного массива.
+
+        // Название таблицы
+        $table = 'name';
+        $getUsers = getUsers($connectionDB, $table);
+        dump($getUsers);
+    } elseif ($action === 'getUser') {
+        // Получаем данные пользователя через его айди.
+        $getUser = getUser($connectionDB, $id);
+        dump($getUser);
+    }
+// Блок определяющий как реагировать на выброшенное исключение.
+}  catch (\PDOException $e) {
+    // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
+    \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
+    // Заваршаем выполнения скрипта и отправляем ошибку
+    die ($e->getMessage());
+} finally  {
+    // В любом другом случаи записываем в файл определенную информацию.
+    \file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
+}
+
+function validateData($data)
+{
+    $msg[] = validateEmail($data['email']);
+    $msg[] = validatePhoneNumber($data['phone_number']);
+    $msg[] .= validatePassword($data['password']);
+    $msg[] .= validateUserName($data['name']);
+
+    return $msg;
+}
+function validatePhoneNumber($phoneNumber)
+{
+    $msg = '';
+
+    if (empty($phoneNumber)) {
+        $msg .= 'Заполните поле номер' . PHP_EOL;
+    } elseif (!preg_match('/((8|\+7)-?)?\(?\d{3,5}\)?-?\d{1}-?\d{1}-?\d{1}-?\d{1}-?\d{1}((-?\d{1})?-?\d{1})?/',
+        $phoneNumber)) {
+        $msg .= 'Некоректный номер' . $phoneNumber . PHP_EOL;
     }
 
+    return $msg;
+}
+function validateEmail(string $email): string
+{
+    $msg = '';
+
+    if (empty($email)) {
+        $msg .= 'Заполните поле почты' . PHP_EOL;
+    } elseif (!preg_match("/[0-9a-z]+@[a-z]/", $email)) {
+        $msg .= 'Почта содержит недопустимые данные' . PHP_EOL;
+    }
+
+    return $msg;
+}
+
+function validatePassword(string $password): string
+{
+    $msg = '';
+
+    if (empty($password)) {
+        $msg .= 'Заполните поле пароль' . PHP_EOL;
+    } elseif (!preg_match('/^(?![0-9]+$).+/', $password)) {
+        $msg .= 'Пароль не должен содержать только цифры' . PHP_EOL;
+    } elseif (!preg_match('/^[^!№;]+$/u', $password)) {
+        $msg .= 'Пароль содержит недопустимые символы' . PHP_EOL;
+    } elseif (!preg_match('/^(?![A-Za-z]+$).+/', $password)) {
+        $msg .= 'Пароль не должен состоять только из букв' . PHP_EOL;
+    } elseif (!preg_match('/[A-Z]/', $password)) {
+        $msg .= 'Пароль должен содержать минимум одну заглавную букву' . PHP_EOL;
+    } elseif (mb_strlen($password, 'utf8') <= 5) {
+        $msg .= 'Пароль содержит меньше 5 символов' . PHP_EOL;
+    } elseif (mb_strlen($password, 'utf8') > 15) {
+        $msg .= 'Пароль больше 15 символов' . PHP_EOL;
+    }
+
+    return $msg;
+}
+
+function validateUserName(string $userName)
+{
+    $msg = '';
+
+    if (empty($userName)) {
+        $msg .= 'Заполните поле имя' . PHP_EOL;
+    } elseif (preg_match('#[^а-яa-z]#ui', $userName)) {
+        $msg .= 'Имя содержит недопустимые символы' . PHP_EOL;
+    } elseif (mb_strlen($userName, 'utf8') > 15) {
+        $msg .= 'Имя содержит больше 15 символов' . $userName . PHP_EOL;
+    } elseif (mb_strlen($userName, 'utf8') <= 3) {
+        $msg .= 'Имя содержит менее 4 символов'. $userName . PHP_EOL;
+    }
+
+    return $msg;
+}
+
+function editPhoneNumber(string $phoneNumber): string
+{
+    $editedPhoneNumber = str_replace(['+', '8'], '', $phoneNumber);
+    if (strlen($phoneNumber) === 10 && substr($phoneNumber, 0, 1) !== '7') {
+        $editedPhoneNumber = '7' . $phoneNumber;
+    }
+
+    return (string) $editedPhoneNumber;
+}
+
+/**
+ * Экранирование данных.
+ * @param mixed $data
+ * @return array
+ */
+function quoteData(array $data): array
+{
+    // Перебираем массив с приходящими данными.
+    foreach ($data as $key => $value) {
+        // Экранируем каждый элемент массива.
+        $quoteData[$key] = connectionDB()->quote(($value));
+    }
     // Возвращаем экранированные данные.
-    return $data;
+    return $quoteData;
 }
 
 /**
@@ -310,93 +438,3 @@ function updateUser(\PDO $connection, array $data, int $userId): array
     // Возвращаем массив измененных данных пользователя.
     return (array) $data;
 }
-
-
-$connectionDB = connectionDB();
-
-// Модель исключений
-try {
-    // Определяем метод взаимодействия с данными пользователя.
-    $action = 'getUsers';
-
-    // Определяем айди пользователя.
-    $id = 49;
-    if ($action === 'delete') {
-        // Удаляем пользователя.
-        $deleteUser = deleteUser($connectionDB, $id);
-    } elseif ($action === 'update') {
-        // Обновляем пользователя.
-        $data = [
-            'name' => 'aszxcd',
-            'email' => 'tasdads3@gmail.com',
-            'phone_number' => '7591541231',
-            'password' => \password_hash('fada', PASSWORD_DEFAULT),
-        ];
-        validateData($data);
-        $updateUser = updateUser($connectionDB, $data, $id);
-    } elseif ($action === 'save') {
-        // Добавляем пользователя.
-        $data = [
-            'name' => 'zxcclmnk',
-            'email' => 'lmnk@gmail.com',
-            'phone_number' => '1321asd32312',
-            'password' => \password_hash('1234asd124', PASSWORD_DEFAULT),
-            'is_active' => '1'
-        ];
-        validateData($data);
-        $saveUser = saveUser($connectionDB, $data);
-    } elseif ($action === 'check') {
-        // Проверяем наличие вводимых данных в БД.
-        $email = 'tezst@gmail.com';
-        $phone = '7051241w2432';
-        validateData($email);
-        validateData($phone);
-        $checkUserEmail = checkUserEmail($connectionDB, $email);
-        $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $phone);
-        if (!($checkUserPhoneNumber || $checkUserEmail)) {
-            echo 'Пользователя с такими данными нет!';
-        } else {
-            echo 'Пользователь с этими данными существует';
-        }
-    } elseif ($action === 'getUsers') {
-        // Получаем всех пользователей в виде ассоциативного массива.
-
-        // Название таблицы
-        $table = 'name';
-        validateData($table);
-        $getUsers = getUsers($connectionDB, $table);
-        dump($getUsers);
-    } elseif ($action === 'getUser') {
-        // Получаем данные пользователя через его айди.
-        $getUser = getUser($connectionDB, $id);
-        dump($getUser);
-    }
-// Блок определяющий как реагировать на выброшенное исключение.
-}  catch (\PDOException $e) {
-    // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
-    \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
-    // Заваршаем выполнения скрипта и отправляем ошибку
-    die ($e->getMessage());
-} finally  {
-    // В любом другом случаи записываем в файл определенную информацию.
-    \file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
-}
-
-// ----------------------------------
-
-//class MyPDO extends PDO
-//{
-//    public function __construct($file = 'my_setting.ini')
-//    {
-//        if (!$settings = parse_ini_file($file, true)) {
-//            throw new exception('Unable to open ' . $file . '.');
-//        }
-//
-//        $dns = $settings['database']['driver'] .
-//            ':host=' . $settings['database']['host'] .
-//            ((!empty($settings['database']['port'])) ? (';port=' . $settings['database']['port']) : '') .
-//            ';dbname=' . $settings['database']['schema'];
-//
-//        parent::__construct($dns, $settings['database']['username'], $settings['database']['password']);
-//    }
-//}
