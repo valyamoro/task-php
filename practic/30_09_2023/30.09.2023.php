@@ -1,16 +1,54 @@
 <?php
 /*
- * Применить транзакции, там где нужно.
  * Использовать лимиты везде где только можно.
- * Вынести интерфейс бекенда наверх.
  * Создать отдельные функции для каждой валидации и затем вызвать их внутри другой функции.
  * Изменить валидацию номера телефона. Она работает неправильно.
  * Изменить валидацию пароля, нельзя ограничивать символы.
  * Нужно полностью обезопасить приложение.
  * Применить кодировку через declare.
+ * Сообщение об ошибке на продакшне должно быть зарегистрировано в логе, но не показано на сайте.
+ * Сделать так чтобы обрабатывались разные ошибки.
+ * Возможно какие-то ошибки не так критичны чтобы прекращать работу всего приложения
+ *
+ *
  */
 declare(strict_types=1);
+
+use JetBrains\PhpStorm\NoReturn;
+
+ini_set('display_errors', '1');
 error_reporting(-1);
+
+#[NoReturn] function myExceptionHandler ($e): void
+{
+    error_log($e->getMessage());
+    http_response_code(500);
+    if (ini_get('display_errors')) {
+        echo $e;
+    } else {
+        echo '<h1>Ошибка 500</h1>';
+    }
+}
+
+set_exception_handler('myExceptionHandler');
+
+set_error_handler(/**
+ * @throws ErrorException
+ */ function ($level, $message, $file = '', $line = 0)
+{
+    throw new ErrorException($message, 0, $level, $file, $line);
+});
+
+register_shutdown_function(function ()
+{
+    $error = error_get_last();
+    if ($error !== null) {
+        $e = new ErrorException(
+            $error['message'], 0, $error['type'], $error['file'], $error['line']
+        );
+        myExceptionHandler($e);
+    }
+});
 
 /**
  * Выводим удобочитаемую информацию о переменной.
@@ -19,9 +57,10 @@ error_reporting(-1);
  */
 function dump(mixed $data): void
 {
-    echo '<pre>'; \print_r($data); echo '</pre>';
+    echo '<pre>';
+    \print_r($data);
+    echo '</pre>';
 }
-
 // Указываем параметры для подключения к БД.
 const DB_HOST = 'localhost';
 const DB_NAME = 'mvc-int-shop';
@@ -35,7 +74,7 @@ const DB_PASSWORD = '';
  */
 function connectionDB(): ?\PDO
 {
-    // При последующих вызовах этой функции переменная не будет пересоздаваться.
+    // При последующих вызовах этой функции, переменная не будет пересоздаваться.
     static $dbh = null;
 
     // Предотвращаем пересоздание объекта PDO.
@@ -44,7 +83,7 @@ function connectionDB(): ?\PDO
     }
 
     // Конструкция для обработки исключений.
-    try {
+//    try {
         // Задаем настройки для подключения к БД.
         $options = [
             // Режим сообщения об ошибках. Выбрасывает PDOException.
@@ -55,6 +94,9 @@ function connectionDB(): ?\PDO
 
             // При подключении автоматически выполняем команду установки кодировки.
             \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . DB_CHARSET,
+
+            // Отключаем режим эмуляции.
+//            \PDO::ATTR_EMULATE_PREPARES   => false,
         ];
 
         // Определяем параметры для строки источника данных.
@@ -64,10 +106,11 @@ function connectionDB(): ?\PDO
         $dbh = new PDO($dsn, DB_USER, DB_PASSWORD, $options);
 
     // Ловим исключения.
-    } catch (\PDOException $e) {
-        // Прерываем выполнение скрипта и выводим ошибку на экран.
-        die ('Connection error: ' . $e->getMessage());
-    }
+//    } catch (\Throwable $e) {
+        // Выводим ошибку на экран.
+        // Потом отправлять эту ошибку в специальную функцию. *
+//        echo "Connection error: {$e->getMessage()} <br>";
+//    }
 
     // Возвращаем объект PDO с настройками.
     return $dbh;
@@ -76,9 +119,9 @@ function connectionDB(): ?\PDO
 $connectionDB = connectionDB();
 
 // Модель исключений
-try {
+//try {
     // Определяем метод взаимодействия с данными пользователя.
-    $action = 'save';
+    $action = 'getUsers';
 
     // Определяем айди пользователя.
     $id = 49;
@@ -106,8 +149,7 @@ try {
         ];
         dump(validateData($data));
         quoteData($data);
-        die;
-        $saveUser = saveUser($connectionDB, $data);
+        $saveUser = addUser($connectionDB, $data);
     } elseif ($action === 'check') {
         // Проверяем наличие вводимых данных в БД.
         $email = 'tasdads3@gmail.com';
@@ -134,16 +176,13 @@ try {
         $getUser = getUser($connectionDB, $id);
         dump($getUser);
     }
-// Блок определяющий как реагировать на выброшенное исключение.
-}  catch (\PDOException $e) {
+// Создаем объект класса PDOException.
+//}  catch (\PDOException $e) {
     // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
-    \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
+//    \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
     // Заваршаем выполнения скрипта и отправляем ошибку
-    die ($e->getMessage());
-} finally  {
-    // В любом другом случаи записываем в файл определенную информацию.
-    \file_put_contents('user22.txt', 'get user' . PHP_EOL, FILE_APPEND);
-}
+//    die ($e->getMessage());
+//}
 
 function validateData($data)
 {
@@ -242,6 +281,7 @@ function quoteData(array $data): array
         // Экранируем каждый элемент массива.
         $quoteData[$key] = connectionDB()->quote(($value));
     }
+
     // Возвращаем экранированные данные.
     return $quoteData;
 }
@@ -263,15 +303,8 @@ function getUsers(\PDO $connection, string $order): array
     // Запускаем подготовленный запрос на выполнение.
     $sth->execute([$order]);
 
-    // Получаем оставшиеся строки из набора результатов.
-    $result = $sth->fetchAll();
-
-    // Если в базе данных нет пользователей, то выбрасываем ошибку.
-    throwError($result, 'Users not found');
-
     // Возвращаем ассоциативный массив данных всех пользователей.
-    // Ключи берем из имени столбцов.
-    return (array) $result;
+    return (array) $sth->fetchAll();
 }
 
 /**
@@ -291,15 +324,8 @@ function getUser(\PDO $connection, int $id): array
     // Передаем айди для позиционного параметра на вход и запускаем подготовленный запрос на выполнение.
     $sth->execute([$id]);
 
-    // Извлекаем следующую строку с данными пользователя из результирующего набора.
-    $result = $sth->fetch();
-
-    // Если пользователь не найден, то выбрасываем ошибку.
-    throwError($result, 'User not found');
-
     // Возвращаем ассоциативный массив данных пользователя.
-    // Ключи берутся из название столбцов.
-    return (array) $result;
+    return (array) $sth->fetch();
 }
 
 /**
@@ -310,7 +336,7 @@ function getUser(\PDO $connection, int $id): array
  * Для этой функции стоит применить транзакции, например если она не возвращает айди последней созданной записи
  * То откатываем запрос и смотрим что пошло не так * *
  */
-function saveUser(\PDO $connection, array $data): int
+function addUser(\PDO $connection, array $data): int
 {
     // Запрос добавляющий пользователя с данными.
     $query = 'INSERT INTO users (name, email, phone_number, password, is_active)
@@ -329,11 +355,8 @@ function saveUser(\PDO $connection, array $data): int
         ':is_active' => $data['is_active'],
     ]);
 
-    // Получаем ID последней вставленной строки.
-    $result = $connection->lastInsertId();
-
     // Возвращаем айди последней созданной записи.
-    return (int) $result;
+    return (int) $connection->lastInsertId();
 }
 
 /**
@@ -354,11 +377,8 @@ function checkUserEmail(\PDO $connection, string $email): bool
     // И запускаем подготовленный запрос на выполнение.
     $sth->execute([$email]);
 
-    // Получаем информацию о пользователе, если почта совпала.
-    $result = $sth->fetch();
-
     // Возвращаем true, если пользователь с такой почтой существует, иначе false.
-    return (bool) $result;
+    return (bool) $sth->fetch();
 }
 
 /**
@@ -379,11 +399,8 @@ function checkUserPhoneNumber(\PDO $connection, string $phoneNumber): bool
     // И запускаем подготовленный запрос на выполнение.
     $sth->execute([$phoneNumber]);
 
-    // Получаем информацию о пользователе, если номер телефона совпал.
-    $result = $sth->fetch();
-
     // Возвращаем true, если пользователь с таким номером телефона существует, иначе false.
-    return (bool) $result;
+    return (bool) $sth->fetch();
 }
 
 /**
@@ -431,7 +448,6 @@ function updateUser(\PDO $connection, array $data, int $userId): array
         ':email' => $data['email'],
         ':phone_number' => $data['phone_number'],
         ':password' => $data['password'],
-        // Айди не проходит экранирование, т.к он будет получен с сессии, либо введен админом *
         ':id' => $userId,
     ]);
 

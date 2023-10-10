@@ -166,3 +166,13 @@ SQLSTATE[22007]: Invalid datetime format: 1292 Truncated incorrect DOUBLE value:
 SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'name' cannot be null
 SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'is_active' cannot be null
 SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'is_active' cannot be null
+SQLSTATE[22001]: String data, right truncated: 1406 Data too long for column 'phone_number' at row 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECwT * FROM users ORDER BY 'name' DESC' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECwT * FROM users ORDER BY 'name' DESC' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECwT * FROM users ORDER BY 'name' DESC' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECwT * FROM users ORDER BY 'name' DESC' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECwT * FROM users ORDER BY 'name' DESC' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECwT * FROM users ORDER BY 'name' DESC' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECwT * FROM users ORDER BY 'name' DESC' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECwT * FROM users ORDER BY 'name' DESC' at line 1
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECwT * FROM users ORDER BY 'name' DESC' at line 1
