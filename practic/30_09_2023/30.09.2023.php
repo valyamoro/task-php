@@ -7,6 +7,7 @@
  * Изменить валидацию номера телефона. Она работает неправильно.
  * Изменить валидацию пароля, нельзя ограничивать символы.
  * Нужно полностью обезопасить приложение.
+ * Применить кодировку через declare.
  */
 declare(strict_types=1);
 error_reporting(-1);
@@ -219,8 +220,6 @@ function validateUserName(string $userName)
     return $msg;
 }
 
-
-
 function editPhoneNumber(string $phoneNumber): string
 {
     $editedPhoneNumber = str_replace(['+', '8'], '', $phoneNumber);
@@ -232,37 +231,7 @@ function editPhoneNumber(string $phoneNumber): string
 }
 
 /**
- * Функция записи ошибок в файл
- * @param string $message
- * @return void
- */
-function writeError(string $message): void
-{
-    // Записываем в переменную путь до файла с ошибками.
-    $errorLog = 'errors.log';
-    // Записываем ошибку в файл.
-    \file_put_contents($errorLog, $message . PHP_EOL, FILE_APPEND);
-}
-
-/**
- * Функция обработки ошибок.
- * @param array $result
- * @param string $message
- * @return void
- */
-function throwError(mixed $result, string $message): void
-{
-    // Если результат функции возвращает неожиданный результат.
-    if (empty($result)) {
-        // Функция записи ошибки в файл.
-        writeError($message);
-        // Завершаем скрипт и выводим ошибку на экран.
-        die("Error: {$message}");
-    }
-}
-
-/**
- * Тут будут только ЭКРАНИРОВАТЬСЯ ДАННЫЕ. Валидация будет в другом месте.
+ * Экранирование данных.
  * @param mixed $data
  * @return array
  */
