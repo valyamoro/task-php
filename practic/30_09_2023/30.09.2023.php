@@ -1,16 +1,12 @@
 <?php
 /*
- * Использовать лимиты везде где только можно.
- * Создать отдельные функции для каждой валидации и затем вызвать их внутри другой функции.
  * Изменить валидацию номера телефона. Она работает неправильно.
  * Изменить валидацию пароля, нельзя ограничивать символы.
  * Нужно полностью обезопасить приложение.
  * Применить кодировку через declare.
- * Сообщение об ошибке на продакшне должно быть зарегистрировано в логе, но не показано на сайте.
- * Сделать так чтобы обрабатывались разные ошибки.
- * Возможно какие-то ошибки не так критичны чтобы прекращать работу всего приложения
- *
- *
+ * Изменить валидацию почты. Изменить абсолютно всё в валидации.
+ * Сделать пагинацию пользователей.
+ *  quoteData должна принимать любые значения.
  */
 declare(strict_types=1);
 
@@ -23,9 +19,9 @@ error_reporting(-1);
 {
     error_log($e->getMessage());
     http_response_code(500);
-    if (ini_get('display_errors')) {
+    if (ini_get('display_errors') == 1) {
         echo $e;
-    } else {
+    } elseif (ini_get('display_errors') == 2) {
         echo '<h1>Ошибка 500</h1>';
     }
 }
@@ -82,35 +78,26 @@ function connectionDB(): ?\PDO
         return $dbh;
     }
 
-    // Конструкция для обработки исключений.
-//    try {
-        // Задаем настройки для подключения к БД.
-        $options = [
-            // Режим сообщения об ошибках. Выбрасывает PDOException.
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+    // Задаем настройки для подключения к БД.
+    $options = [
+        // Режим сообщения об ошибках. Выбрасывает PDOException.
+        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 
-            // Режим выборки. Возвращает массив индексированный именами столбцов результирующего набора.
-            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+        // Режим выборки. Возвращает массив индексированный именами столбцов результирующего набора.
+        \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
 
-            // При подключении автоматически выполняем команду установки кодировки.
-            \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . DB_CHARSET,
+        // При подключении автоматически выполняем команду установки кодировки.
+        \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . DB_CHARSET,
 
-            // Отключаем режим эмуляции.
+        // Отключаем режим эмуляции.
 //            \PDO::ATTR_EMULATE_PREPARES   => false,
-        ];
+    ];
 
-        // Определяем параметры для строки источника данных.
-        $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
+    // Определяем параметры для строки источника данных.
+    $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
 
-        // Создаем объект для подключения к БД с настройками.
-        $dbh = new PDO($dsn, DB_USER, DB_PASSWORD, $options);
-
-    // Ловим исключения.
-//    } catch (\Throwable $e) {
-        // Выводим ошибку на экран.
-        // Потом отправлять эту ошибку в специальную функцию. *
-//        echo "Connection error: {$e->getMessage()} <br>";
-//    }
+    // Создаем объект для подключения к БД с настройками.
+    $dbh = new PDO($dsn, DB_USER, DB_PASSWORD, $options);
 
     // Возвращаем объект PDO с настройками.
     return $dbh;
@@ -118,81 +105,101 @@ function connectionDB(): ?\PDO
 
 $connectionDB = connectionDB();
 
-// Модель исключений
-//try {
-    // Определяем метод взаимодействия с данными пользователя.
-    $action = 'getUsers';
+// Определяем метод взаимодействия с данными пользователя.
+$action = 'getUsers';
 
-    // Определяем айди пользователя.
-    $id = 49;
-    if ($action === 'delete') {
-        // Удаляем пользователя.
-        $deleteUser = deleteUser($connectionDB, $id);
-    } elseif ($action === 'update') {
-        // Обновляем пользователя.
-        $data = [
-            'name' => 'aszxcd',
-            'email' => 'tasdads3@gmail.com',
-            'phone_number' => '7591541231',
-            'password' => \password_hash('fada', PASSWORD_DEFAULT),
-        ];
-        quoteData($data);
-        $updateUser = updateUser($connectionDB, $data, $id);
-    } elseif ($action === 'save') {
-        // Добавляем пользователя.
-        $data = [
-            'name' => 'gkutlu1mbek',
-            'email' => 'lmn.com',
-            'phone_number' => 'as890935ads23212ddd',
-            'password' => '1xr#be%r123',
-            'is_active' => '1',
-        ];
-        dump(validateData($data));
-        quoteData($data);
-        $saveUser = addUser($connectionDB, $data);
-    } elseif ($action === 'check') {
-        // Проверяем наличие вводимых данных в БД.
-        $email = 'tasdads3@gmail.com';
-        $phone = '7051241w2432';
-        $userData = quoteData(['email' => $email, 'phone_number' => $phone]);
+// Определяем айди пользователя.
+$id = 69;
 
-        $checkUserEmail = checkUserEmail($connectionDB, $userData['email']);
-        $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $userData['phone_number']);
+// Определяем данные пользователя.
+$data = [
+    'name' => '12312412',
+    'email' => 'zxcdas@gmail.com',
+    'phone_number' => '7591541231',
+    'password' => 'zxcvDzxcvda2s2',
+    'is_active' => '2',
+];
 
-        if (!($checkUserPhoneNumber || $checkUserEmail)) {
-            echo 'Пользователя с такими данными нет';
-        } else {
-            echo 'Пользователь с этими данными существует';
-        }
-    } elseif ($action === 'getUsers') {
-        // Получаем всех пользователей в виде ассоциативного массива.
+$checkData = [
+    'email' => 'tasdads3@gmail.com',
+    'phone_number' => '705124242',
+];
 
-        // Название таблицы
-        $table = 'name';
-        $getUsers = getUsers($connectionDB, $table);
-        dump($getUsers);
-    } elseif ($action === 'getUser') {
-        // Получаем данные пользователя через его айди.
-        $getUser = getUser($connectionDB, $id);
-        dump($getUser);
+$errors = validateData($data);
+
+if ($action === 'delete') {
+    // Удаляем пользователя.
+    $deleteUser = deleteUser($connectionDB, $id);
+} elseif ($action === 'update') {
+    // Обновляем пользователя.
+    (checkValidate($errors) ?? die);
+    quoteData($data);
+    $updateUser = updateUser($connectionDB, $data, $id);
+} elseif ($action === 'save') {
+    // Добавляем пользователя.
+    (checkValidate($errors) ?? die);
+    quoteData($data);
+    $saveUser = addUser($connectionDB, $data);
+} elseif ($action === 'check') {
+    // Проверяем наличие вводимых данных в БД.
+
+
+    $userData = quoteData($checkData);
+
+    $checkUserEmail = checkUserEmail($connectionDB, $userData['email']);
+    $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $userData['phone_number']);
+
+    // Может быть можно сделать по другому?*
+    if (!($checkUserPhoneNumber || $checkUserEmail)) {
+        echo 'Пользователя с такими данными нет';
+    } else {
+        echo 'Пользователь с этими данными существует';
     }
-// Создаем объект класса PDOException.
-//}  catch (\PDOException $e) {
-    // Записываем в файл информацию об ошибке определенной в классе Error в функциях.
-//    \file_put_contents('errors.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
-    // Заваршаем выполнения скрипта и отправляем ошибку
-//    die ($e->getMessage());
-//}
+} elseif ($action === 'getUsers') {
+    // Получаем всех пользователей в виде ассоциативного массива.
 
-function validateData($data)
-{
-    $msg[] = validateEmail($data['email']);
-    $msg[] = validatePhoneNumber($data['phone_number']);
-    $msg[] .= validatePassword($data['password']);
-    $msg[] .= validateUserName($data['name']);
-
-    return $msg;
+    // Название таблицы
+    $table = 'name';
+    $getUsers = getUsers($connectionDB, $table);
+    dump($getUsers);
+} elseif ($action === 'getUser') {
+    // Получаем данные пользователя через его айди.
+    $getUser = getUser($connectionDB, $id);
+    dump($getUser);
 }
+
+function checkValidate($errors): ?array
+{
+    $checking = [];
+    foreach ($errors as $element) {
+        if (!empty($element)) {
+            echo $element . '<br>';
+            $checking[] = $element;
+        }
+    }
+    return !empty($checking) ? null : $checking;
+}
+
+function validateData($data): array
+{
+    $errors = [];
+
+    $validationFunctions = [
+        'email' => 'validateEmail',
+        'phone_number' => 'validatePhoneNumber',
+        'password' => 'validatePassword',
+        'name' => 'validateUserName',
+    ];
+
+    foreach ($data as $key => $value) {
+        if (array_key_exists($key, $validationFunctions)) {
+            $validationFunction = $validationFunctions[$key];
+            $errors[$key] = $validationFunction($value);
+        }
+    }
+
+    return $errors;
+};
 function validatePhoneNumber($phoneNumber)
 {
     $msg = '';
@@ -276,6 +283,7 @@ function editPhoneNumber(string $phoneNumber): string
  */
 function quoteData(array $data): array
 {
+    $quoteData = [];
     // Перебираем массив с приходящими данными.
     foreach ($data as $key => $value) {
         // Экранируем каждый элемент массива.
