@@ -67,6 +67,7 @@ function dump(mixed $data): void
     \print_r($data);
     echo '</pre>';
 }
+
 // Указываем параметры для подключения к БД.
 const DB_HOST = 'localhost';
 const DB_NAME = 'mvc-int-shop';
