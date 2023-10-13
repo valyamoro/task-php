@@ -17,4 +17,3 @@ if ($choiceCoinSide != 'Орел' && $choiceCoinSide != 'Решка') {
 } else {
     echo 'Вы проиграли.';
 }
-
