@@ -1,47 +1,57 @@
 <?php
-/*
- * Изменить валидацию номера телефона. Она работает неправильно.
- * Изменить валидацию пароля, нельзя ограничивать символы.
- * Нужно полностью обезопасить приложение.
- * Применить кодировку через declare.
- * Изменить валидацию почты. Изменить абсолютно всё в валидации.
- * Сделать пагинацию пользователей.
- *  quoteData должна принимать любые значения.
- */
 declare(strict_types=1);
 
 use JetBrains\PhpStorm\NoReturn;
 
-ini_set('display_errors', '1');
-error_reporting(-1);
+// Установка значения настройки конфигурации протоколирования ошибок.
+\ini_set('display_errors', '1');
+// Сообщаем обо всех ошибках.
+\error_reporting(-1);
 
+/** Пользовательский обработчик исключений.
+ * @param $e
+ * @return void
+ */
 #[NoReturn] function myExceptionHandler ($e): void
 {
-    error_log($e->getMessage());
-    http_response_code(500);
-    if (ini_get('display_errors') == 1) {
+    // Отправляем сообщение об ошибке, заданному обработчику ошибок.
+    \error_log($e->getMessage());
+    // Устанавливаем код ответа HTTP.
+    \http_response_code(500);
+    // Устанавливаем режим отображения ошибок.
+    if (\ini_get('display_errors') == 1) {
+        // Выводим все системных ошибки.
         echo $e;
-    } elseif (ini_get('display_errors') == 2) {
+    } elseif (\ini_get('display_errors') == 0) {
+        // Выводим "оправдание" для пользователя.
         echo '<h1>Ошибка 500</h1>';
     }
 }
 
-set_exception_handler('myExceptionHandler');
+// Задаем пользовательский обработчик ИСКЛЮЧЕНИЙ.
+\set_exception_handler('myExceptionHandler');
 
+// Задаем пользовательский обработчик ОШИБОК.
 set_error_handler(/**
  * @throws ErrorException
  */ function ($level, $message, $file = '', $line = 0)
 {
-    throw new ErrorException($message, 0, $level, $file, $line);
+    // Выбрасываем в класс ErrorException нужную информацию.
+    throw new \ErrorException($message, 0, $level, $file, $line);
 });
 
-register_shutdown_function(function ()
+// Выполняем заданную функцию если работа приложения завершилась.
+\register_shutdown_function(function ()
 {
-    $error = error_get_last();
+    // Получаем информацию о последней произошедшей ошибке.
+    $error = \error_get_last();
+    // Если появилась ошибка:
     if ($error !== null) {
+        // Создаем экземпляр класса с настройками.
         $e = new ErrorException(
             $error['message'], 0, $error['type'], $error['file'], $error['line']
         );
+        // Передаем в пользовательский обработчик исключений информацию об ошибке.
         myExceptionHandler($e);
     }
 });
@@ -80,7 +90,7 @@ function connectionDB(): ?\PDO
 
     // Задаем настройки для подключения к БД.
     $options = [
-        // Режим сообщения об ошибках. Выбрасывает PDOException.
+        // Режим сообщения об ошибках. Выбрасывает исключения в PDOException.
         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 
         // Режим выборки. Возвращает массив индексированный именами столбцов результирующего набора.
@@ -88,16 +98,13 @@ function connectionDB(): ?\PDO
 
         // При подключении автоматически выполняем команду установки кодировки.
         \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . DB_CHARSET,
-
-        // Отключаем режим эмуляции.
-//            \PDO::ATTR_EMULATE_PREPARES   => false,
     ];
 
     // Определяем параметры для строки источника данных.
     $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET;
 
     // Создаем объект для подключения к БД с настройками.
-    $dbh = new PDO($dsn, DB_USER, DB_PASSWORD, $options);
+    $dbh = new \PDO($dsn, DB_USER, DB_PASSWORD, $options);
 
     // Возвращаем объект PDO с настройками.
     return $dbh;
@@ -106,59 +113,47 @@ function connectionDB(): ?\PDO
 $connectionDB = connectionDB();
 
 // Определяем метод взаимодействия с данными пользователя.
-$action = 'getUsers';
+$action = 'update';
 
 // Определяем айди пользователя.
 $id = 69;
 
 // Определяем данные пользователя.
 $data = [
-    'name' => '12312412',
+    'name' => 'qwdqwdqw',
     'email' => 'zxcdas@gmail.com',
-    'phone_number' => '7591541231',
-    'password' => 'zxcvDzxcvda2s2',
-    'is_active' => '2',
+    'phone_number' => '7521541231',
+    'password' => '1zxcvzxcvDda2s2',
 ];
 
+// Определяем данные для проверки на существование в базе данных.
 $checkData = [
-    'email' => 'tasdads3@gmail.com',
-    'phone_number' => '705124242',
+    'email' => 'zxcdas@gmail.1com',
+    'phone_number' => '75215141231',
 ];
-
-$errors = validateData($data);
 
 if ($action === 'delete') {
     // Удаляем пользователя.
     $deleteUser = deleteUser($connectionDB, $id);
 } elseif ($action === 'update') {
     // Обновляем пользователя.
-    (checkValidate($errors) ?? die);
-    quoteData($data);
-    $updateUser = updateUser($connectionDB, $data, $id);
+    validateData($data) ?? die;
+    $quoteData = quoteData($data);
+    $updateUser = updateUser($connectionDB, $quoteData, $id);
 } elseif ($action === 'save') {
     // Добавляем пользователя.
-    (checkValidate($errors) ?? die);
-    quoteData($data);
-    $saveUser = addUser($connectionDB, $data);
+    validateData($data) ?? die;
+    $quoteData = quoteData($data);
+    $saveUser = addUser($connectionDB, $quoteData);
 } elseif ($action === 'check') {
     // Проверяем наличие вводимых данных в БД.
-
-
-    $userData = quoteData($checkData);
-
-    $checkUserEmail = checkUserEmail($connectionDB, $userData['email']);
-    $checkUserPhoneNumber = checkUserPhoneNumber($connectionDB, $userData['phone_number']);
-
-    // Может быть можно сделать по другому?*
-    if (!($checkUserPhoneNumber || $checkUserEmail)) {
-        echo 'Пользователя с такими данными нет';
-    } else {
-        echo 'Пользователь с этими данными существует';
-    }
+    validateData($checkData) ?? die;
+    $quoteData = quoteData($checkData);
+    $checkExistData = checkData($quoteData);
+    $check = $checkExistData ? 'Данные существуют' : 'Данные не существуют';
+    echo $check;
 } elseif ($action === 'getUsers') {
-    // Получаем всех пользователей в виде ассоциативного массива.
-
-    // Название таблицы
+    // Получаем всех пользователей.
     $table = 'name';
     $getUsers = getUsers($connectionDB, $table);
     dump($getUsers);
@@ -168,22 +163,59 @@ if ($action === 'delete') {
     dump($getUser);
 }
 
-function checkValidate($errors): ?array
+/**
+ * Функция для проверки существования данных.
+ * @param array $data
+ * @return bool|null
+ */
+function checkData(array $data): ?bool
 {
-    $checking = [];
-    foreach ($errors as $element) {
-        if (!empty($element)) {
-            echo $element . '<br>';
-            $checking[] = $element;
+    // Создаем пустой массив.
+    $existsData = [];
+
+    // Обозначаем какие функции к каким данным нужно применить.
+    $checkFunctions = [
+        'email' => 'checkUserEmail',
+        'phone_number' => 'checkUserPhoneNumber',
+    ];
+    // Перебираем приходящие данные.
+    foreach ($data as $key => $value) {
+        // Если в checkFunctions существуют ключи из $data, то выполняем код.
+        if (array_key_exists($key, $checkFunctions)) {
+            // На каждой итерации присваиваем переменной ключ.
+            $checkFunction = $checkFunctions[$key];
+            // На каждой итерации присваиваем переменной значение элементов $checkFunctions.
+            $existsData[$key] = $checkFunction(connectionDB(), $value);
         }
     }
-    return !empty($checking) ? null : $checking;
+
+    // Создаем пустой массив.
+    $isUserExist = [];
+
+    // Перебираем результат выполнения функций.
+    foreach ($existsData as $element) {
+        // Если элемент не пуст, то выполняем.
+        if (!empty($element)) {
+            // Присваиваем массиву каждый не пустой элемент.
+            $isUserExist[] = $element;
+        }
+    }
+
+    // Возвращаем true, если данные есть в БД.
+    return (bool) $isUserExist;
 }
 
-function validateData($data): array
+/**
+ * Функция валидации данных.
+ * @param array $data
+ * @return array|null
+ */
+function validateData(array $data): ?array
 {
+    // Создаем пустой массив с будущими ошибками.
     $errors = [];
 
+    // Обозначаем какие функции к каким данным нужно применить.
     $validationFunctions = [
         'email' => 'validateEmail',
         'phone_number' => 'validatePhoneNumber',
@@ -191,89 +223,116 @@ function validateData($data): array
         'name' => 'validateUserName',
     ];
 
+    // Перебираем приходящие данные.
     foreach ($data as $key => $value) {
+        // Если в $validationFunctions существуют ключи из $data, то выполняем код.
         if (array_key_exists($key, $validationFunctions)) {
+            // На каждой итерации присваиваем переменной значение элементов $validationFunctions.
             $validationFunction = $validationFunctions[$key];
+            // Присваиваем массиву результат выполнения функций из $validationFunctions.
             $errors[$key] = $validationFunction($value);
         }
     }
 
-    return $errors;
-};
-function validatePhoneNumber($phoneNumber)
+    // Создаем пустой массив.
+    $checking = [];
+
+    // Перебираем результат выполнения функций.
+    foreach ($errors as $element) {
+        // Если элемент не пуст, то выполняем.
+        if (!empty($element)) {
+            // Выводим ошибку валидации.
+            echo $element . '<br>';
+            // Присваиваем массиву каждый не пустой элемент.
+            $checking[] = $element;
+        }
+    }
+
+    // Возвращаем null, если есть ошибки, иначе массив с ошибками.
+    return $checking ? null : $checking;
+}
+
+/** Функция валидации номера телефона.
+ * @param string $phoneNumber
+ * @return string
+ */
+function validatePhoneNumber(string $phoneNumber): string
 {
     $msg = '';
 
     if (empty($phoneNumber)) {
         $msg .= 'Заполните поле номер' . PHP_EOL;
-    } elseif (!preg_match('/((8|\+7)-?)?\(?\d{3,5}\)?-?\d{1}-?\d{1}-?\d{1}-?\d{1}-?\d{1}((-?\d{1})?-?\d{1})?/',
+    } elseif (!\preg_match('/((8|\+7)-?)?\(?\d{3,5}\)?-?\d{1}-?\d{1}-?\d{1}-?\d{1}-?\d{1}((-?\d{1})?-?\d{1})?/',
         $phoneNumber)) {
         $msg .= 'Некоректный номер' . $phoneNumber . PHP_EOL;
+    } elseif (!\preg_match('/^[^!№;a-z]+$/u', $phoneNumber)) {
+        $msg .= 'Недопустимые символы';
     }
 
     return $msg;
 }
+
+/** Функция валидации почты.
+ * @param string $email
+ * @return string
+ */
 function validateEmail(string $email): string
 {
     $msg = '';
 
     if (empty($email)) {
         $msg .= 'Заполните поле почты' . PHP_EOL;
-    } elseif (!preg_match("/[0-9a-z]+@[a-z]/", $email)) {
+    } elseif (!\preg_match("/[0-9a-z]+@[a-z]/", $email)) {
         $msg .= 'Почта содержит недопустимые данные' . PHP_EOL;
     }
 
     return $msg;
 }
 
+/** Функция валидации пароля.
+ * @param string $password
+ * @return string
+ */
 function validatePassword(string $password): string
 {
     $msg = '';
 
     if (empty($password)) {
         $msg .= 'Заполните поле пароль' . PHP_EOL;
-    } elseif (!preg_match('/^(?![0-9]+$).+/', $password)) {
+    } elseif (!\preg_match('/^(?![0-9]+$).+/', $password)) {
         $msg .= 'Пароль не должен содержать только цифры' . PHP_EOL;
-    } elseif (!preg_match('/^[^!№;]+$/u', $password)) {
-        $msg .= 'Пароль содержит недопустимые символы' . PHP_EOL;
-    } elseif (!preg_match('/^(?![A-Za-z]+$).+/', $password)) {
+    } elseif (!\preg_match('/^(?![A-Za-z]+$).+/', $password)) {
         $msg .= 'Пароль не должен состоять только из букв' . PHP_EOL;
-    } elseif (!preg_match('/[A-Z]/', $password)) {
+    } elseif (!\preg_match('/[A-Z]/', $password)) {
         $msg .= 'Пароль должен содержать минимум одну заглавную букву' . PHP_EOL;
-    } elseif (mb_strlen($password, 'utf8') <= 5) {
+    } elseif (\mb_strlen($password, 'utf8') <= 5) {
         $msg .= 'Пароль содержит меньше 5 символов' . PHP_EOL;
-    } elseif (mb_strlen($password, 'utf8') > 15) {
+    } elseif (\mb_strlen($password, 'utf8') > 15) {
         $msg .= 'Пароль больше 15 символов' . PHP_EOL;
     }
 
     return $msg;
 }
 
-function validateUserName(string $userName)
+/** Функция валидации имени пользователя.
+ * @param string $userName
+ * @return string
+ */
+function validateUserName(string $userName): string
 {
     $msg = '';
 
     if (empty($userName)) {
         $msg .= 'Заполните поле имя' . PHP_EOL;
-    } elseif (preg_match('#[^а-яa-z]#ui', $userName)) {
+    } elseif (\preg_match('#[^а-яa-z]#ui', $userName)) {
         $msg .= 'Имя содержит недопустимые символы' . PHP_EOL;
-    } elseif (mb_strlen($userName, 'utf8') > 15) {
+    } elseif (\mb_strlen($userName, 'utf8') > 15) {
         $msg .= 'Имя содержит больше 15 символов' . $userName . PHP_EOL;
-    } elseif (mb_strlen($userName, 'utf8') <= 3) {
+    } elseif (\mb_strlen($userName, 'utf8') <= 3) {
         $msg .= 'Имя содержит менее 4 символов'. $userName . PHP_EOL;
     }
 
     return $msg;
-}
-
-function editPhoneNumber(string $phoneNumber): string
-{
-    $editedPhoneNumber = str_replace(['+', '8'], '', $phoneNumber);
-    if (strlen($phoneNumber) === 10 && substr($phoneNumber, 0, 1) !== '7') {
-        $editedPhoneNumber = '7' . $phoneNumber;
-    }
-
-    return (string) $editedPhoneNumber;
 }
 
 /**
@@ -283,7 +342,9 @@ function editPhoneNumber(string $phoneNumber): string
  */
 function quoteData(array $data): array
 {
+    // Создаем пустой массив.
     $quoteData = [];
+
     // Перебираем массив с приходящими данными.
     foreach ($data as $key => $value) {
         // Экранируем каждый элемент массива.
@@ -341,8 +402,6 @@ function getUser(\PDO $connection, int $id): array
  * @param PDO $connection
  * @param array $data
  * @return int
- * Для этой функции стоит применить транзакции, например если она не возвращает айди последней созданной записи
- * То откатываем запрос и смотрим что пошло не так * *
  */
 function addUser(\PDO $connection, array $data): int
 {
@@ -462,3 +521,4 @@ function updateUser(\PDO $connection, array $data, int $userId): array
     // Возвращаем массив измененных данных пользователя.
     return (array) $data;
 }
+
