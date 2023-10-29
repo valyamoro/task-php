@@ -1,4 +1,7 @@
 <?php
+/*применить именованные параметры к функцям.
+ *
+ */
 declare(strict_types=1);
 
 use JetBrains\PhpStorm\NoReturn;
@@ -114,7 +117,7 @@ function connectionDB(): ?\PDO
 $connectionDB = connectionDB();
 
 // Определяем метод взаимодействия с данными пользователя.
-$action = 'update';
+$action = 'getUsers';
 
 // Определяем айди пользователя.
 $id = 69;
@@ -236,7 +239,7 @@ function validateData(array $data): ?array
     }
 
     // Создаем пустой массив.
-    $checking = [];
+    $checkValidate = [];
 
     // Перебираем результат выполнения функций.
     foreach ($errors as $element) {
@@ -245,12 +248,12 @@ function validateData(array $data): ?array
             // Выводим ошибку валидации.
             echo $element . '<br>';
             // Присваиваем массиву каждый не пустой элемент.
-            $checking[] = $element;
+            $checkValidate[] = $element;
         }
     }
 
-    // Возвращаем null, если есть ошибки, иначе массив с ошибками.
-    return $checking ? null : $checking;
+    // Возвращаем null, если есть ошибки.
+    return $checkValidate ? null : $checkValidate;
 }
 
 /** Функция валидации номера телефона.
@@ -380,7 +383,7 @@ function getUsers(\PDO $connection, string $order): array
 /**
  * Получаем массив с данными пользователя.
  * @param PDO $connection
- * @param int $id
+ * @param int $id 21
  * @return array
  */
 function getUser(\PDO $connection, int $id): array
