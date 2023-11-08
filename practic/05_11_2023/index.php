@@ -61,12 +61,13 @@ if ($_POST['action'] == 1) {
     fwrite($handler, $attempts);
 }
 
-if ($_POST['action'] == 0 && $attempts <= 0) {
+if ($_POST['action'] == 0 || $attempts <= 0) {
     file_put_contents('play_word.txt', '012345');
     file_put_contents('attempts.txt', '12');
     $isContinue = true;
-    header('Location: index.php');
+//    header('Location: index.php');
 }
+
 $word = file('play_word.txt')[0];
 $word = mb_str_split($word);
 foreach ($word as $value) {
@@ -83,6 +84,8 @@ foreach ($showWord as $value) {
         $isContinue = false;
     }
 }
+
+var_dump($isContinue);
 
 if ($attempts <= 0 || !$isContinue) {
     if ($isContinue) {
