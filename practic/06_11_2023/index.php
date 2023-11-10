@@ -1,6 +1,7 @@
 <?php
 
-$items = ['current_word.txt', 'attempts.txt', 'play_word.txt', 'words.txt'];
+
+$items = ['current_word.txt', 'attempts.txt', 'play_word.txt'];
 foreach ($items as $item) {
     if (empty(\file($item))) {
         \fclose(\fopen($item, 'a'));
@@ -8,87 +9,97 @@ foreach ($items as $item) {
     }
 }
 
-if (\count(\file('words.txt')) < 100) {
-    $url = 'https://sanstv.ru/randomWord/lang-ru/strong-2/count-100/word-%3F%3F%3F%3F%3F%3F';
+function getAllWords(): array
+{
+    $url = 'https://sanstv.ru/randomWord/lang-ru/strong-0/count-100/word-%3F%3F%3F%3F%3F%3F';
 
     $ch = \curl_init($url);
     \curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     $response = \curl_exec($ch);
-    \curl_close($ch);
 
-    if (!$response) {
-        die('Ошибка при выполнении запроса.');
-    }
+    \curl_close($ch);
 
     \preg_match_all('/\b[а-яё]{6}\b/u', $response, $matches);
 
-    $words = \array_unique($matches[0]);
+    $result = \array_unique($matches[0]);
 
-    $words = \array_slice($words, 0, 100);
-
-    $words = \implode(' ' . PHP_EOL, $words);
-
-    $handler = \fopen('words.txt', 'w');
-    \fwrite($handler, $words);
+    return \array_slice($result, 0, 100);
 }
 
-$words = \file('words.txt');
+function writeFile(string $content, string $filePath, string $mode = 'a+'): bool
+{
+    $handler = \fopen($filePath, $mode);
+
+    return (bool)\fwrite($handler, $content . "\n");
+}
+
+function readingFile(string $filePath, string $mode = 'r'): string
+{
+    $handler = \fopen($filePath, $mode);
+
+    return \fread($handler, filesize($filePath));
+}
 
 $attempts = \file('attempts.txt')[0];
 
 if ($_POST['action'] === '1') {
-    $handler = \fopen('current_word.txt', 'r');
-    $currentWord = \fread($handler, filesize('current_word.txt'));
+    $currentWord = \readingFile('current_word.txt');
 
     $currentWord = \mb_str_split($currentWord);
 
     $letter = $_POST['letter'];
     $letter = \mb_strtolower($letter, 'utf8');
 
-    $handler = \fopen('play_word.txt', 'r');
-    $playWord = \fread($handler, filesize('play_word.txt'));
+    $playWord = readingFile('play_word.txt');
 
     foreach ($currentWord as $key => $value) {
-        if ($value == $letter) {
+        if ($value === $letter) {
             $playWord = \str_replace($key, $value, $playWord);
-            $handler = \fopen('play_word.txt', 'c');
-            \fwrite($handler, $playWord);
+            writeFile($playWord, 'play_word.txt', 'c');
         }
     }
-
-    $handler = \fopen('attempts.txt', 'w');
-    \fwrite($handler, --$attempts);
+    writeFile(--$attempts, 'attempts.txt', 'w');
 }
 
 if ($_POST['action'] === '0' || $attempts <= 0) {
-    $currentWord = \trim($words[mt_rand(0, 99)]);
+    $words = \count(getAllWords()) > 99 ? getAllWords() : null;
 
-    $handler = \fopen('current_word.txt', 'w');
-    \fwrite($handler, $currentWord);
+    $currentWord = $words[\mt_rand(0, 99)] ?? $_SESSION['errors'] = 'Попробуйте снова!';
 
-    $handler = \fopen('attempts.txt', 'w');
-    \fwrite($handler, '12');
+    if (empty($_SESSION['errors'])) {
+        writeFile($currentWord, 'current_word.txt', 'w');
 
-    $handler = \fopen('play_word.txt', 'w');
-    \fwrite($handler, '012345');
+        writeFile('12', 'attempts.txt', 'w');
+
+        writeFile('012345', 'play_word.txt', 'w');
+
+    }
 }
 
-$isWin = null;
+$playWord = trim(readingFile('play_word.txt'));
+$currentWord = trim(readingFile('current_word.txt'));
 
-if (\file_get_contents('play_word.txt') === \file_get_contents('current_word.txt')) {
-    $isWin = true;
-}
+$isWin = $playWord === $currentWord;
 
-$showWord = \file_get_contents('play_word.txt');
+$showWord = readingFile('play_word.txt');
 $showWord = \mb_str_split($showWord);
+
+?>
+
+<?php if(!empty($_SESSION['errors'])): ?>
+    <?php echo '<p class="msg"> ' . nl2br($_SESSION['errors']) . ' </p>'; ?>
+    <?php unset($_SESSION['errors']); ?>
+<?php endif; ?>
+
+<?php
 
 if ($attempts <= 0 || $isWin) {
     ?>
-    <?php if ($isWin) :?>
-    <p>Вы выиграли!</p>
+    <?php if ($isWin) : ?>
+        <p>Вы выиграли!</p>
     <?php else: ?>
-    <p>Вы проиграли!</p>
+        <p>Вы проиграли!</p>
     <?php endif; ?>
     <form action="" method="POST">
         <button type="submit" name="action" value="0" class="btn btn-primary">Начать заново</button>
@@ -98,8 +109,9 @@ if ($attempts <= 0 || $isWin) {
     ?>
     <form action="" method="POST">
         <div class="mb-3">
-            <label for="letter" class="form-label">Пожалуйста, введите букву:</label>
-            <input type="text" name="letter" class="form-control">
+            <label for="letter" class="form-label">Пожалуйста, введите букву:
+                <input type="text" name="letter" class="form-control">
+            </label>
         </div>
         <button type="submit" name="action" value="1" class="btn btn-primary">Ввести букву</button>
     </form>
@@ -107,18 +119,8 @@ if ($attempts <= 0 || $isWin) {
         <button type="submit" name="action" value="0" class="btn btn-primary">Начать заново</button>
     </form>
     <?php foreach ($showWord as $letter): ?>
-    <?php echo $letter ?>
+        <?php echo $letter ?>
     <?php endforeach; ?>
 
     <?php
 }
-
-
-
-
-
-
-
-
-
-
