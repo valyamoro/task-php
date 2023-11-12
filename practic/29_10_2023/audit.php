@@ -40,8 +40,6 @@ function auditManager(string $visitorName, string $timeOfDate, string $folder): 
     $currentFileIndex = $matches[0] + 1;
     $filePath = $folder . '/' . "audit_{$currentFileIndex}.txt";
     return writeAllText($content, $filePath, 'a+') ? $content : null;
-
-
 }
 
 /////////////////////////////

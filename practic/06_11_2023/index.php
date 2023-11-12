@@ -1,6 +1,5 @@
 <?php
 
-
 $items = ['current_word.txt', 'attempts.txt', 'play_word.txt'];
 foreach ($items as $item) {
     if (empty(\file($item))) {
@@ -77,8 +76,8 @@ if ($_POST['action'] === '0' || $attempts <= 0) {
     }
 }
 
-$playWord = trim(readingFile('play_word.txt'));
-$currentWord = trim(readingFile('current_word.txt'));
+$playWord = \trim(readingFile('play_word.txt'));
+$currentWord = \trim(readingFile('current_word.txt'));
 
 $isWin = $playWord === $currentWord;
 
@@ -87,40 +86,30 @@ $showWord = \mb_str_split($showWord);
 
 ?>
 
-<?php if(!empty($_SESSION['errors'])): ?>
+<?php if (!empty($_SESSION['errors'])): ?>
     <?php echo '<p class="msg"> ' . nl2br($_SESSION['errors']) . ' </p>'; ?>
     <?php unset($_SESSION['errors']); ?>
 <?php endif; ?>
 
-<?php
 
-if ($attempts <= 0 || $isWin) {
-    ?>
+<?php if ($attempts === 0 || $isWin): ?>
     <?php if ($isWin) : ?>
         <p>Вы выиграли!</p>
     <?php else: ?>
         <p>Вы проиграли!</p>
     <?php endif; ?>
-    <form action="" method="POST">
+<?php endif; ?>
+<form action="" method="POST">
+    <div class="mb-3">
+        <label for="letter" class="form-label">Пожалуйста, введите букву:
+            <input type="text" name="letter" class="form-control">
+        </label>
+    </div>
+    <button type="submit" name="action" value="1" class="btn btn-primary">Ввести букву</button>
+    <?php if ($attempts <= 0 || $isWin): ?>
         <button type="submit" name="action" value="0" class="btn btn-primary">Начать заново</button>
-    </form>
-    <?php
-} else {
-    ?>
-    <form action="" method="POST">
-        <div class="mb-3">
-            <label for="letter" class="form-label">Пожалуйста, введите букву:
-                <input type="text" name="letter" class="form-control">
-            </label>
-        </div>
-        <button type="submit" name="action" value="1" class="btn btn-primary">Ввести букву</button>
-    </form>
-    <form action="" method="POST">
-        <button type="submit" name="action" value="0" class="btn btn-primary">Начать заново</button>
-    </form>
-    <?php foreach ($showWord as $letter): ?>
-        <?php echo $letter ?>
-    <?php endforeach; ?>
-
-    <?php
-}
+    <?php endif; ?>
+</form>
+<?php foreach ($showWord as $letter): ?>
+    <?php echo $letter ?>
+<?php endforeach; ?>
